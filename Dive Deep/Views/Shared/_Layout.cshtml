@@ -3,31 +3,96 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Dive_Deep</title>
+    <title>@ViewData["Title"]Dive Deep</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Dive_Deep.styles.css" asp-append-version="true" />
+    <style>
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: rgb(240, 248, 255);
+            color: white;
+        }
+
+        .rounded-navbar {
+            border-radius: 10px;
+            margin: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .navbar {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            padding: 0.5rem 1.5rem;
+            background-color: cornflowerblue;
+            border-radius: 8px;
+        }
+
+        footer {
+            flex-shrink: 0;
+            width: 100%;
+            background-color: cornflowerblue;
+            color: rgb(0, 0, 0);
+            padding: 10px 0;
+            text-align: center;
+            font-size: 12px;
+            box-shadow: 0 -1px 5px rgba(0,0,0,0.1);
+            z-index: 9999;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm custom-navbar">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Dive_Deep</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+
+                <!-- Logo er her -->
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <img src="https://i.ibb.co/xSh0WRf4/Dive-Deep-Logo.png" alt="Logo" width="100" height="100" border-radius="5" class="d-inline-block align-top">
+                </a>
+
+                </a>
+
+                <!-- Middle navigation -->
+                <div class="navbar-nav mx-auto">
+                    <a class="nav-link" asp-controller="Home" asp-action="Index">
+                        Home
+                    </a>
+
+                    <a class="nav-link" asp-controller="Products" asp-action="Index">
+                        Products
+                    </a>
+
+                    <a class="nav-link" asp-controller="Contact" asp-action="Index">
+                        Contact us
+                    </a>
+
+                    <a class="nav-link" asp-controller="Home" asp-action="Privacy">
+                        About
+                    </a>
+
+                </div>
+
+                <!-- Burger menu er her -->
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+
             </div>
         </nav>
     </header>
@@ -38,8 +103,16 @@
     </div>
 
     <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Dive_Deep - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div>
+            Adresse: Dykkervej 10, 5000 Odense C
+            CVR-nummer: 81828384
+            Telefonnummer: +45 60708090 E-mail: info@divedeep.dk
+            © 2025 Dive Deep
+
+            Åbningstider
+            Mandag-fredag: 10:00 - 17:30
+            Lørdag: 10:00 - 14:00
+            Søndag: Lukket
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
