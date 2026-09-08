@@ -20,7 +20,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background-color: rgb(240, 248, 255);
+            background-color: ivory;
             color: white;
         }
 
@@ -32,10 +32,16 @@
 
         .navbar {
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            padding: 0.5rem 1.5rem;
+            padding: 10px;
             background-color: cornflowerblue;
             border-radius: 8px;
         }
+
+        .Logo {
+            height: 60px;
+            width: auto;
+        }
+
 
         footer {
             flex-shrink: 0;
@@ -81,6 +87,16 @@
                     </a>
 
                 </div>
+
+
+                <a class="navbar-brand" asp-controller="Cart" asp-action="Index">
+                    <img src="~/lib/Images/Cart-Logo.png" alt="Logo" width="60" height="60" border-radius="5" class="d-inline-block align-top">
+                </a>
+
+
+                <a class="navbar-brand" asp-controller="Cart" asp-action="Index">
+                    <img src="~/lib/Images/Cart-Logo.png" alt="Logo" width="60" height="60" border-radius="5" class="d-inline-block align-top">
+                </a>
 
                 <!-- Burger menu er her -->
                 <button class="navbar-toggler" type="button"
