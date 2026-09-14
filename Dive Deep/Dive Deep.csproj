@@ -7,4 +7,8 @@
     <RootNamespace>Dive_Deep</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
+
 </Project>
