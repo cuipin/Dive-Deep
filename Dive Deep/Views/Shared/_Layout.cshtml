@@ -320,11 +320,6 @@
 
                     <!-- Right side icons and login -->
                     <div class="navbar-right">
-                        <!-- Wishlist Icon -->
-                        <button class="icon-btn" id="wishlistBtn" title="Ønskeseddel">
-                            <span>♥</span>
-                        </button>
-
                         <!-- Cart ikon med tal -->
                         <a class="icon-btn" asp-controller="Cart" asp-action="Index" title="Indkøbskurv">
                             <span style="position: relative;">
@@ -380,19 +375,6 @@
                     }
                 });
 
-                // Wishlist button interactivity
-                const wishlistBtn = document.getElementById('wishlistBtn');
-                if (wishlistBtn) {
-                    wishlistBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        this.classList.toggle('active');
-                        // Add animation
-                        this.style.animation = 'none';
-                        setTimeout(() => {
-                            this.style.animation = 'heart-beat 0.3s';
-                        }, 10);
-                    });
-                }
 
                 // Search input focus effect
                 const searchInput = document.querySelector('.search-input');
