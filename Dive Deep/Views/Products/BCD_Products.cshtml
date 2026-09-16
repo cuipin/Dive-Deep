@@ -1,0 +1,26 @@
+﻿@using Dive_Deep.Models;
+@using Dive_Deep.Models.ProduktTypes;
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model IEnumerable<BCD>
+@{
+    ViewData["title"] = "BCD Produkter";
+}
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @foreach (var BCD in Model)
+    {
+        <div class="col">
+            <div class="card">
+                <a href="default.asp"><img src="~/lib/Images/BCD.jpg" class="card-img-top" alt="..."></a>
+                <div class="card-body">
+                    <h5 class="card-title">Model: @BCD.Model</h5>
+                    <h5 class="card-title">Mærke: @BCD.Mærke</h5>
+                    <h5 class="card-title">Størrelse: @BCD.Størrelse</h5>
+                    <h5 class="card-title">Pris pr dag i kr: @BCD.PrisPrDag</h5>
+                    <p class="card-text"></p>
+                    <a href="#" class="btn btn-primary">Tilføj til Kurv</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
