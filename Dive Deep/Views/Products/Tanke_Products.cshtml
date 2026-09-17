@@ -1,5 +1,26 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Dive_Deep.Models;
+@using Dive_Deep.Models.ProduktTypes;
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model IEnumerable<Tanke>
 @{
+    ViewData["title"] = "Tanke Produkter";
 }
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @foreach (var Tanke in Model)
+    {
+        <div class="col">
+            <div class="card">
+                <a href="default.asp"><img src="~/lib/Images/Tank.webp" class="card-img-top" alt="..."></a>
+                <div class="card-body">
+                    <h5 class="card-title">Mærke: @Tanke.Mærke</h5>
+                    <h5 class="card-title">Volumen: @Tanke.Volumen</h5>
+                    <h5 class="card-title">Pris pr dag i kr: @Tanke.PrisPrDag</h5>
+                    <p class="card-text"></p>
+                    <a href="#" class="btn btn-primary">Tilføj til Kurv</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+

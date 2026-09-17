@@ -24,5 +24,29 @@ namespace Dive_Deep.Controllers
             var dykkedragter = ProductRepository.GetAllOfType<Dykkerdragter>().ToList();
             return View("Dykkedragter_Products", dykkedragter);
         }
+
+        public IActionResult Finner_Products()
+        {
+            var finner = ProductRepository.GetAllOfType<Finner>().ToList();
+            return View("Finner_Products", finner);
+        }
+
+        public IActionResult MaskeSnorkel_Products()
+        {
+            var maskeSnorkel = ProductRepository.GetAllOfType<MaskeSnorkel>().ToList();
+            return View("MaskeSnorkel_Products", maskeSnorkel);
+        }
+
+        public IActionResult Regulatorsæt_Products()
+        {
+            var regulatorsæt = ProductRepository.GetAllOfType<Regulatorsæt>().ToList();
+            return View("Regulatorsæt_Products", regulatorsæt);
+        }
+
+        public IActionResult Tanke_Products()
+        {
+            var tanke = ProductRepository.GetAllOfType<Tanke>().ToList();
+            return View("Tanke_Products", tanke);
+        }
     }
 }
