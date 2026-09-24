@@ -1,8 +1,8 @@
 ﻿namespace Dive_Deep.ViewModels
 {
-    internal class Booking
+    internal class _Booking
     {
-        public Booking()
+        public _Booking()
         {
         }
     }

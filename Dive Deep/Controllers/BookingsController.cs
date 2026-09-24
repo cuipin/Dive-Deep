@@ -1,31 +1,33 @@
-﻿using Dive_Deep.Persistence;
+﻿using Dive_Deep.Data;
+using Dive_Deep.Models;
+using Dive_Deep.Persistence;
+using Dive_Deep.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Dive_Deep.Models;
-using Microsoft.AspNetCore.Mvc;
-using Dive_Deep.ViewModels;
-using Dive_Deep.Data;
-using Dive_Deep.Persistence;
 
 namespace Dive_Deep.Controllers
 {
     public class BookingsController : Controller
     {
-        private readonly IBookingService _bookingService;
-        private readonly IRoomRepository _productRepository;
+        private readonly IBookingRepository _bookingRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public BookingsController(IBookingService bookingService, IRoomRepository roomRepository, UserManager<ApplicationUser> userManager)
+        public BookingsController(
+            IBookingRepository bookingRepository,
+            UserManager<ApplicationUser> userManager)
         {
-            _bookingService = bookingService;
-            _productRepository = roomRepository;
+            _bookingRepository = bookingRepository;
             _userManager = userManager;
         }
+
         public IActionResult Index()
         {
             var userId = _userManager.GetUserId(User);
-            var bookings = _bookingService.GetAll().Where(b => b.UserId == userId).ToList();
+
+            var bookings = _bookingRepository.GetAll()
+                .Where(b => b.UserId == userId)
+                .ToList();
+
             return View(bookings);
         }
 
@@ -35,14 +37,25 @@ namespace Dive_Deep.Controllers
 
             var bookingVM = new BookingViewModel
             {
-                Rooms = _productRepository.GetAll()
+                Products = ProductRepository.GetAll()
             };
 
             var date = DateTime.Now;
-            bookingVM.Booking.StartTime = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, 0);
-            bookingVM.Booking.EndTime = new DateTime(date.Year, date.Month, date.Day, date.Hour + 1, date.Minute, 0);
 
-            if (id != null) bookingVM.Booking.RoomId = id.Value;
+            bookingVM.Booking.StartTime = new DateTime(
+                date.Year,
+                date.Month,
+                date.Day,
+                date.Hour,
+                date.Minute,
+                0);
+
+            bookingVM.Booking.EndTime = bookingVM.Booking.StartTime.AddHours(1);
+
+            if (id != null)
+            {
+                bookingVM.Booking.ProductId = id.Value;
+            }
 
             return View(bookingVM);
         }
@@ -51,48 +64,42 @@ namespace Dive_Deep.Controllers
         public IActionResult Add(BookingViewModel bookingVM)
         {
             bookingVM.Booking.UserId = _userManager.GetUserId(User);
+
             ModelState.Remove("Booking.UserId");
 
             if (!ModelState.IsValid)
             {
-
-                bookingVM.Rooms = _productRepository.GetAll();
+                bookingVM.Products = ProductRepository.GetAll();
                 ViewBag.Action = "add";
 
                 return View(bookingVM);
             }
 
-            var result = _bookingService.Add(bookingVM.Booking);
-            if (!result.IsSuccessful)
-            {
-                ModelState.AddModelError(result.Key, result.ErrorMessage);
-                bookingVM.Rooms = _productRepository.GetAll();
-                ViewBag.Action = "add";
-
-                return View(bookingVM);
-            }
+            _bookingRepository.Add(bookingVM.Booking);
 
             return RedirectToAction("Index");
         }
 
         public IActionResult Edit(int? id)
         {
-            var booking = _bookingService.GetById(id ?? 0);
+            var booking = _bookingRepository.GetById(id ?? 0);
+
             if (booking == null)
             {
                 return RedirectToAction("Index");
             }
 
             var userId = _userManager.GetUserId(User);
+
             if (booking.UserId != userId)
             {
                 return RedirectToAction("Index");
             }
 
-            BookingViewModel bookingVM = new BookingViewModel
+            var bookingVM = new BookingViewModel
             {
                 Booking = booking,
-                Rooms = _productRepository.GetAll()
+                Products = ProductRepository.GetAll()
             };
 
             ViewBag.Action = "edit";
@@ -103,58 +110,56 @@ namespace Dive_Deep.Controllers
         [HttpPost]
         public IActionResult Edit(BookingViewModel bookingVM)
         {
-            var existing = _bookingService.GetById(bookingVM.Booking.BookingId);
+            var existing = _bookingRepository.GetById(
+                bookingVM.Booking.BookingId);
+
             if (existing == null)
             {
                 return RedirectToAction("Index");
             }
 
             var userId = _userManager.GetUserId(User);
+
             if (existing.UserId != userId)
             {
                 return RedirectToAction("Index");
             }
 
             bookingVM.Booking.UserId = userId;
+
             ModelState.Remove("Booking.UserId");
 
             if (!ModelState.IsValid)
             {
-                bookingVM.Rooms = _productRepository.GetAll();
-
+                bookingVM.Products = ProductRepository.GetAll();
                 ViewBag.Action = "edit";
 
                 return View(bookingVM);
             }
 
-            var result = _bookingService.Update(bookingVM.Booking);
-            if (!result.IsSuccessful)
-            {
-                ModelState.AddModelError(result.Key, result.ErrorMessage);
-                bookingVM.Rooms = _productRepository.GetAll();
-                ViewBag.Action = "edit";
-
-                return View(bookingVM);
-            }
+            _bookingRepository.Update(bookingVM.Booking);
 
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
         public IActionResult Delete(int id)
         {
-            var booking = _bookingService.GetById(id);
+            var booking = _bookingRepository.GetById(id);
+
             if (booking == null)
             {
                 return NotFound();
             }
 
             var userId = _userManager.GetUserId(User);
+
             if (booking.UserId != userId)
             {
                 return Forbid();
             }
 
-            _bookingService.Delete(id);
+            _bookingRepository.Delete(id);
 
             return RedirectToAction("Index");
         }

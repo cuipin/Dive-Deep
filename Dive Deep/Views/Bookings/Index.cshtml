@@ -1,0 +1,59 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+@model List<Dive_Deep.Models.Booking>
+
+<h1>Mine bookinger</h1>
+
+@if (!Model.Any())
+{
+    <p>Du har ingen bookinger endnu.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Start</th>
+                <th>Slut</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var booking in Model)
+            {
+                <tr>
+                    <td>Produkt ID: @booking.ProductId</td>
+                    <td>@booking.StartTime.ToString("dd-MM-yyyy HH:mm")</td>
+                    <td>@booking.EndTime.ToString("dd-MM-yyyy HH:mm")</td>
+                    <td>
+                        <a asp-action="Edit"
+                           asp-route-id="@booking.BookingId"
+                           class="btn btn-primary">
+                            Rediger
+                        </a>
+
+                        <form asp-action="Delete"
+                              asp-route-id="@booking.BookingId"
+                              method="post"
+                              style="display:inline;">
+                            <button type="submit"
+                                    class="btn btn-danger">
+                                Slet
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-action="Add" class="btn btn-success">
+    Opret booking
+</a>
