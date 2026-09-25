@@ -334,10 +334,13 @@
                     <!-- Right side icons and login -->
                     <div class="navbar-right">
                         <!-- Cart ikon med tal -->
+                        @{
+                            var cartCount = Dive_Deep.Persistence.CartService.GetCart(Context).Count;
+                        }
                         <a class="icon-btn" asp-controller="Cart" asp-action="Index" title="Indkøbskurv">
                             <span style="position: relative;">
                                 🛒
-                                <span class="badge-cart">0</span>
+                                <span class="badge-cart">@cartCount</span>
                             </span>
                         </a>
 

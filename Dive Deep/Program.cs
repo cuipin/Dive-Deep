@@ -24,6 +24,9 @@ namespace Dive_Deep
 
             builder.Services.AddScoped<IBookingRepository, BookingRepository>();                                       
 
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -36,6 +39,8 @@ namespace Dive_Deep
 
             app.UseHttpsRedirection();
             app.UseRouting();
+
+            app.UseSession();
 
             app.UseAuthentication();
             app.UseAuthorization();

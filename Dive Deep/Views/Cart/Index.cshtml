@@ -1,7 +1,43 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@model List<CartItemViewModel>
+@using Dive_Deep.ViewModels
 
+<div class="container my-4">
+    <h1>Din kurv</h1>
 
+    @if (!Model.Any())
+    {
+        <p>Din kurv er tom.</p>
+    }
+    else
+    {
+        <form asp-controller="Cart" asp-action="Confirm" method="post">
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                <div class="card mb-3 p-3">
+                    <input type="hidden" asp-for="@Model[i].ProductId" />
+                    <input type="hidden" asp-for="@Model[i].DisplayName" />
+                    <input type="hidden" asp-for="@Model[i].PrisPrDag" />
+
+                    <h5>@Model[i].DisplayName</h5>
+                    <p>Pris pr dag: @Model[i].PrisPrDag kr</p>
+
+                    <div class="mb-2">
+                        <label asp-for="@Model[i].StartTime" class="form-label">Start</label>
+                        <input type="datetime-local" step="60" asp-for="@Model[i].StartTime" class="form-control" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label asp-for="@Model[i].EndTime" class="form-label">Slut</label>
+                        <input type="datetime-local" step="60" asp-for="@Model[i].EndTime" class="form-control" />
+                    </div>
+
+                    <button type="submit" asp-controller="Cart" asp-action="Remove" asp-route-index="@i" formmethod="post" class="btn btn-outline-danger btn-sm">
+                        Fjern
+                    </button>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary">Book alle</button>
+        </form>
+    }
+</div>

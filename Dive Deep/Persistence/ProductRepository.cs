@@ -7,6 +7,13 @@ namespace Dive_Deep.Persistence
 {
     public static class ProductRepository
     {
+        static ProductRepository()
+        {
+            for (int i = 0; i < products.Count; i++)
+            {
+                products[i].ProductId = i + 1;
+            }
+        }
         private static List<Product> products = new List<Product>
            {
                 new BCD
@@ -330,6 +337,11 @@ namespace Dive_Deep.Persistence
         public static List<Product> GetAll()
         {
             return products;
+        }
+
+        public static Product? GetById(int id)
+        {
+            return products.FirstOrDefault(p => p.ProductId == id);
         }
 
         // New helper to get all items of a specific derived type

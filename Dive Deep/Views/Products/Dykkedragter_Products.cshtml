@@ -21,7 +21,9 @@
                     <h5 class="card-title">Tykkelse i mm: @Dykkerdragter.Tykkelse</h5>
                     <h5 class="card-title">Pris pr dag i kr: @Dykkerdragter.PrisPrDag</h5>
                     <p class="card-text"></p>
-                    <a href="#" class="btn btn-primary">Tilføj til Kurv</a>
+                    <form asp-controller="Cart" asp-action="Add" asp-route-productId="@Dykkerdragter.ProductId" method="post">
+                        <button type="submit" class="btn btn-primary">Book</button>
+                    </form>
                 </div>
             </div>
         </div>
