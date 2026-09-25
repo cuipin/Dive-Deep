@@ -1,3 +1,9 @@
+using Dive_Deep.Data;
+using Dive_Deep.Persistence;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Dive_Deep.Data;
+
 namespace Dive_Deep
 {
     public class Program
@@ -8,6 +14,15 @@ namespace Dive_Deep
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection"); 
+            builder.Services.AddDbContext<Dive_DeepContext>(options =>                                               
+                options.UseSqlServer(connectionString));                                                              
+
+            builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+                .AddEntityFrameworkStores<Dive_DeepContext>();                                                          
+
+            builder.Services.AddScoped<IBookingRepository, BookingRepository>();                                       
 
             var app = builder.Build();
 
@@ -22,6 +37,7 @@ namespace Dive_Deep
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();
@@ -29,6 +45,8 @@ namespace Dive_Deep
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
                 .WithStaticAssets();
+
+            app.MapRazorPages();
 
             app.Run();
         }

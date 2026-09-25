@@ -1,10 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Dive_Deep.Models;
-
-namespace Dive_Deep.Data
+using Microsoft.AspNetCore.Identity;
+namespace Dive_Deep.Data;
+// Add profile data for application users by adding properties to the ApplicationUser class
+public class ApplicationUser : IdentityUser
 {
-    public class ApplicationUser : IdentityUser
-    {
-        public ICollection<Booking>? Bookings { get; set; }
-    }
 }

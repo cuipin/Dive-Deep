@@ -1,5 +1,46 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
+@using Dive_Deep.ViewModels
+
+@model BookingViewModel
+
 @{
+    string action = ViewBag.Action ?? string.Empty;
+    string title = action == "edit" ? "Rediger booking" : "Opret booking";
 }
+
+<div class="container my-4">
+    <h1 class="mb-4">@title</h1>
+
+    <form method="post" asp-controller="Bookings" asp-action="@action">
+        @if (action == "edit")
+        {
+            <input type="hidden" asp-for="Booking.BookingId" />
+        }
+
+        <div class="mb-3">
+            <label asp-for="Booking.ProductId" class="form-label"></label>
+            <select asp-for="Booking.ProductId"
+                    asp-items="@(new SelectList(Model.Products.Select(p => new { p.ProductId, Display = p.Category + " - " + p.Mærke }), "ProductId", "Display", Model.Booking?.ProductId))"
+                    class="form-select">
+                <option>- Vælg udstyr -</option>
+            </select>
+            <span asp-validation-for="Booking.ProductId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Booking.StartTime" class="form-label"></label>
+            <input type="datetime-local" step="60" asp-for="Booking.StartTime" class="form-control" />
+            <span asp-validation-for="Booking.StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Booking.EndTime" class="form-label"></label>
+            <input type="datetime-local" step="60" asp-for="Booking.EndTime" class="form-control" />
+            <span asp-validation-for="Booking.EndTime" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a asp-controller="Bookings" asp-action="Index" class="btn btn-secondary ms-2">Annuller</a>
+    </form>
+</div>

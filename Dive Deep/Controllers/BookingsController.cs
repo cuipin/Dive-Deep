@@ -57,7 +57,7 @@ namespace Dive_Deep.Controllers
                 bookingVM.Booking.ProductId = id.Value;
             }
 
-            return View(bookingVM);
+            return View("BookingView", bookingVM);
         }
 
         [HttpPost]
@@ -72,7 +72,7 @@ namespace Dive_Deep.Controllers
                 bookingVM.Products = ProductRepository.GetAll();
                 ViewBag.Action = "add";
 
-                return View(bookingVM);
+                return View("BookingView", bookingVM);
             }
 
             _bookingRepository.Add(bookingVM.Booking);
@@ -104,7 +104,7 @@ namespace Dive_Deep.Controllers
 
             ViewBag.Action = "edit";
 
-            return View(bookingVM);
+            return View("BookingView", bookingVM);
         }
 
         [HttpPost]
@@ -134,7 +134,7 @@ namespace Dive_Deep.Controllers
                 bookingVM.Products = ProductRepository.GetAll();
                 ViewBag.Action = "edit";
 
-                return View(bookingVM);
+                return View("BookingView", bookingVM);
             }
 
             _bookingRepository.Update(bookingVM.Booking);

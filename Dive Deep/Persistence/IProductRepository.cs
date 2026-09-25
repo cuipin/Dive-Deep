@@ -2,9 +2,9 @@
 
 namespace Dive_Deep.Persistence
 {
-    public interface IRoomRepository
+    public interface IProductRepository
     {
-        void Add(Product prodoct);
+        void Add(Product product);
         void Delete(int id);
         List<Product> GetAll();
         Product? GetById(int id);
