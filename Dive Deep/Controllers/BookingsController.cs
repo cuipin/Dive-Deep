@@ -1,5 +1,4 @@
 ﻿using Dive_Deep.Data;
-using Dive_Deep.Models;
 using Dive_Deep.Persistence;
 using Dive_Deep.ViewModels;
 using Microsoft.AspNetCore.Identity;
