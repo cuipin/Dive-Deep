@@ -1,13 +1,19 @@
-﻿using Dive_Deep.Models;
+using Dive_Deep.Models;
 
-namespace Dive_Deep.Persistence
+namespace Dive_Deep.Persistence;
+
+public interface IProductRepository
 {
-    public interface IProductRepository
-    {
-        void Add(Product product);
-        void Delete(int id);
-        List<Product> GetAll();
-        Product? GetById(int id);
-        void Update(Product product);
-    }
+    Task<IReadOnlyList<Product>> SearchProductsAsync(
+        string? search,
+        string? categoryName,
+        decimal? minimumDailyRate,
+        decimal? maximumDailyRate,
+        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetCategoryNamesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Product>> GetByCategoryNameAsync(string categoryName, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ProductVariant>> GetBookingChoicesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ProductVariant>> GetVariantsByIdsAsync(
+        IReadOnlyCollection<int> productVariantIds,
+        CancellationToken cancellationToken = default);
 }

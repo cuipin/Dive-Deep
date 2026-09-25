@@ -75,8 +75,12 @@ public class RegisterModel : PageModel
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [Required]
+        [Display(Name = "Brugernavn")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required]
         [EmailAddress]
-        [Display(Name = "Email")]
+        [Display(Name = "E-mail")]
         public string Email { get; set; } = default!;
 
         /// <summary>
@@ -84,9 +88,9 @@ public class RegisterModel : PageModel
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "{0} skal være mindst {2} og højst {1} tegn.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Adgangskode")]
         public string Password { get; set; } = default!;
 
         /// <summary>
@@ -94,11 +98,10 @@ public class RegisterModel : PageModel
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Display(Name = "Gentag adgangskode")]
+        [Compare("Password", ErrorMessage = "Adgangskoderne stemmer ikke overens.")]
         public string? ConfirmPassword { get; set; }
     }
-
 
     public async Task OnGetAsync(string? returnUrl = null)
     {
@@ -114,8 +117,10 @@ public class RegisterModel : PageModel
         {
             var user = CreateUser();
 
-            await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-            await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+            var username = Input.Username.Trim();
+            var email = Input.Email.Trim();
+            await _userStore.SetUserNameAsync(user, username, CancellationToken.None);
+            await _emailStore.SetEmailAsync(user, email, CancellationToken.None);
             var result = await _userManager.CreateAsync(user, Input.Password);
 
             if (result.Succeeded)
@@ -131,7 +136,7 @@ public class RegisterModel : PageModel
                     values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                     protocol: Request.Scheme)!;
 
-                await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                await _emailSender.SendEmailAsync(email, "Bekræft din e-mail",
                     $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
                 if (_userManager.Options.SignIn.RequireConfirmedAccount)

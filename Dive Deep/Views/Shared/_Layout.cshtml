@@ -1,16 +1,21 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Dive_Deep.Data
 @inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var currentSearch = Context.Request.Query["search"].ToString();
+}
 
 <!DOCTYPE html>
 <html lang="da">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"]Dive Deep</title>
+    <title>@ViewData["Title"] · Dive Deep</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Dive_Deep.styles.css" asp-append-version="true" />
     <style>
 
@@ -315,7 +320,7 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Contact" asp-action="Index">Kontakt</a>
                         </li>
-                        @if (SignInManager.IsSignedIn(User))
+                        @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin</a>
@@ -327,9 +332,11 @@
                     </ul>
 
                     <!-- Search Bar -->
-                    <div class="search-container">
-                        <input type="search" class="search-input" placeholder="Søg efter udstyr...">
-                    </div>
+                    <form class="search-container" asp-controller="Products" asp-action="Index" method="get" role="search">
+                        <input type="search" class="search-input" name="search" value="@currentSearch"
+                               placeholder="Søg efter udstyr..." aria-label="Søg efter produkter">
+                        <button class="search-submit" type="submit" aria-label="Søg">⌕</button>
+                    </form>
 
                     <!-- Right side icons and login -->
                     <div class="navbar-right">
@@ -337,14 +344,13 @@
                         <a class="icon-btn" asp-controller="Cart" asp-action="Index" title="Indkøbskurv">
                             <span style="position: relative;">
                                 🛒
-                                <span class="badge-cart">0</span>
                             </span>
                         </a>
 
                         <!-- Login Button -->
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            <span class="nav-link">Hej, @User.Identity?.Name!</span>
+                            <span class="nav-link greeting">Hej, @UserManager.GetUserName(User)!</span>
                             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" style="display:inline;">
                                 <button type="submit" class="btn-login" style="border:none;">
                                     <span>👤</span>

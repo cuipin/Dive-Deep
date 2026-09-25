@@ -1,9 +1,6 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+namespace Dive_Deep.Models.ProduktTypes;
 
-namespace Dive_Deep.Models.ProduktTypes
+public class MaskeSnorkel : ProductDisplayModel
 {
-    public class MaskeSnorkel : Product
-    {
-        public string? Model { get; set; }
-    }
+    public string Model { get; set; } = string.Empty;
 }

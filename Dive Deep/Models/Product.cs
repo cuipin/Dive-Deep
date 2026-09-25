@@ -1,10 +1,13 @@
-﻿namespace Dive_Deep.Models
+namespace Dive_Deep.Models;
+
+public class Product
 {
-    public class Product
-    {
-        public int ProductId { get; set; }
-        public string Category { get; set; } = string.Empty;
-        public string Mærke { get; set; } = string.Empty;
-        public int PrisPrDag { get; set; }
-    }
+    public int ProductId { get; set; }
+    public int ProductCategoryId { get; set; }
+    public ProductCategory Category { get; set; } = null!;
+    public string Brand { get; set; } = string.Empty;
+    public string Model { get; set; } = string.Empty;
+    public string? ImageFileName { get; set; }
+    public bool IsActive { get; set; } = true;
+    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }

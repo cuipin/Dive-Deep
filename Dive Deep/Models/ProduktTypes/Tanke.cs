@@ -1,7 +1,6 @@
-﻿namespace Dive_Deep.Models.ProduktTypes
+namespace Dive_Deep.Models.ProduktTypes;
+
+public class Tanke : ProductDisplayModel
 {
-    public class Tanke : Product
-    {
-        public int Volumen { get; set; }
-    }
+    public decimal Volumen { get; set; }
 }

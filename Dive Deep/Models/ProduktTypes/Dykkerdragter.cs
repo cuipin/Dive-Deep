@@ -1,25 +1,10 @@
-﻿namespace Dive_Deep.Models.ProduktTypes
+namespace Dive_Deep.Models.ProduktTypes;
+
+public class Dykkerdragter : ProductDisplayModel
 {
-    public enum DykkerdragterStørrelse
-    {
-        S,
-        M,
-        L,
-    }
-
-    public enum DykkedragterKøn
-    {
-        Herre,
-        Dame,
-        Unisex,
-    }
-
-    public class Dykkerdragter : Product
-    {
-        public string? Model { get; set; }
-        public List<DykkerdragterStørrelse> Størrelse { get; set; } = new();
-        public string? Type { get; set; }
-        public List<DykkedragterKøn> Køn { get; set; } = new();
-        public double? Tykkelse { get; set; }
-    }
+    public string Model { get; set; } = string.Empty;
+    public string Størrelse { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Køn { get; set; } = string.Empty;
+    public decimal? Tykkelse { get; set; }
 }

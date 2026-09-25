@@ -1,341 +1,112 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+using Dive_Deep.Data;
 using Dive_Deep.Models;
-using Dive_Deep.Models.ProduktTypes;
+using Microsoft.EntityFrameworkCore;
 
-namespace Dive_Deep.Persistence
+namespace Dive_Deep.Persistence;
+
+public class ProductRepository : IProductRepository
 {
-    public static class ProductRepository
+    private readonly Dive_DeepContext _db;
+
+    public ProductRepository(Dive_DeepContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Product>> SearchProductsAsync(
+        string? search,
+        string? categoryName,
+        decimal? minimumDailyRate,
+        decimal? maximumDailyRate,
+        CancellationToken cancellationToken = default)
     {
-        private static List<Product> products = new List<Product>
-           {
-                new BCD
-                {
-                    Category = "BCD",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 125,
-                    Model = "Navigator Lite BCD",
-                    Størrelse = "S, M, L"
+        var products = _db.Products
+            .AsNoTracking()
+            .Where(product => product.IsActive);
 
-                },
-
-                new BCD
-                {
-                    Category = "BCD",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 140,
-                    Model = "BCD Glide",
-                    Størrelse = "S, M, L"
-
-                },
-
-                new BCD
-                {
-                    Category = "BCD",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 200,
-                    Model = "BCD Hydros Pro",
-                    Størrelse = "S, M, L"
-
-                },
-
-                new BCD
-                {
-                    Category = "BCD",
-                    Mærke = "Seac",
-                    PrisPrDag = 145,
-                    Model = "BCD Modular",
-                    Størrelse = "S, M, L"
-
-                },
-
-                new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 100,
-                    Model = "Definition",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Våddragt",
-                    Køn = "Unisex",
-                    Tykkelse = 3
-                },
-
-               new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 100,
-                    Model = "Definition",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Våddragt",
-                    Køn = "Unisex",
-                    Tykkelse = 5
-                },
-
-               new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 100,
-                    Model = "Definition",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Våddragt",
-                    Køn = "Unisex",
-                    Tykkelse = 7
-                },
-
-               new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Waterproof",
-                    PrisPrDag = 100,
-                    Model = "W5",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Våddragt",
-                    Køn = "Unisex",
-                    Tykkelse = 3.5
-                },
-
-               new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Fourth Element",
-                    PrisPrDag = 120,
-                    Model = "Proteus",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Våddragt",
-                    Køn = "Unisex",
-                    Tykkelse = 5
-                },
-
-               new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 300,
-                    Model = "Exodry 4.0",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Tørdragt",
-                    Køn = "Unisex",
-                    Tykkelse = null
-                },
-
-                new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Waterproof",
-                    PrisPrDag = 320,
-                    Model = "D7 Evo",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Tørdragt",
-                    Køn = "Unisex",
-                    Tykkelse = null
-                },
-
-                 new Dykkerdragter
-                {
-                    Category = "Dykkerdragt",
-                    Mærke = "Santi",
-                    PrisPrDag = 350,
-                    Model = "E.Lite Plus",
-                    Størrelse = "XS, S, M, L, XL",
-                    Type = "Tørdragt",
-                    Køn = "Unisex",
-                    Tykkelse = null
-                },
-
-                 new Tanke
-                {
-                    Category = "Tanke",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 150,
-                    Volumen = 5
-                },
-
-                  new Tanke
-                {
-                    Category = "Tanke",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 160,
-                    Volumen = 10
-                },
-
-                   new Tanke
-                {
-                    Category = "Tanke",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 170,
-                    Volumen = 12
-                },
-
-                   new Tanke
-                {
-                    Category = "Tanke",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 180,
-                    Volumen = 15
-                },
-
-                   new Regulatorsæt
-                {
-                    Category = "Regulatorsæt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 125,
-                    Trin1 = "MK25EVO",
-                    Trin2 = "S600",
-                    Octopus = "R105"
-                },
-
-                  new Regulatorsæt
-                {
-                    Category = "Regulatorsæt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 100,
-                    Trin1 = "MK17EVO",
-                    Trin2 = "C370",
-                    Octopus = "R095"
-                },
-
-                  new Regulatorsæt
-                {
-                    Category = "Regulatorsæt",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 150,
-                    Trin1 = "MK25EVO BT",
-                    Trin2 = "A700 Carbon BT",
-                    Octopus = "S270"
-                },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 50,
-                    Model = "Ghost",
-                  },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 60,
-                    Model = "D-Mask",
-                  },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 50,
-                    Model = "Spectra Mini",
-                  },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 75,
-                    Model = "Crystal VU",
-                  },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Fourth Element",
-                    PrisPrDag = 75,
-                    Model = "Scout Kontrast",
-                  },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Fourth Element",
-                    PrisPrDag = 75,
-                    Model = "Scout Enhance",
-                  },
-
-                  new MaskeSnorkel
-                  {
-                    Category = "Maske/Snorkel",
-                    Mærke = "Tusa",
-                    PrisPrDag = 75,
-                    Model = "Element",
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 50,
-                    Model = "Jet Fin",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 50,
-                    Model = "GO Travel",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Scubapro",
-                    PrisPrDag = 60,
-                    Model = "Seawing Supernova",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Seac",
-                    PrisPrDag = 50,
-                    Model = "Propulsion",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Seac",
-                    PrisPrDag = 50,
-                    Model = "ALA",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Fourth Element",
-                    PrisPrDag = 75,
-                    Model = "Tech",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-
-                  new Finner
-                  {
-                    Category = "Finner",
-                    Mærke = "Fourth Element",
-                    PrisPrDag = 80,
-                    Model = "Rec Fin",
-                    Størrelse = "XS, S, M, L, XL"
-                  },
-           };
-
-        public static List<Product> GetAll()
+        if (!string.IsNullOrWhiteSpace(categoryName))
         {
-            return products;
+            products = products.Where(product => product.Category.Name == categoryName);
         }
 
-        // New helper to get all items of a specific derived type
-        public static IEnumerable<T> GetAllOfType<T>() where T : Product
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            return products.OfType<T>();
+            var searchTerm = search.Trim();
+            products = products.Where(product =>
+                product.Brand.Contains(searchTerm)
+                || product.Model.Contains(searchTerm)
+                || product.Category.Name.Contains(searchTerm));
         }
+
+        if (minimumDailyRate.HasValue || maximumDailyRate.HasValue)
+        {
+            products = products.Where(product => product.Variants.Any(variant =>
+                variant.IsActive
+                && (!minimumDailyRate.HasValue || variant.DailyRate >= minimumDailyRate.Value)
+                && (!maximumDailyRate.HasValue || variant.DailyRate <= maximumDailyRate.Value)));
+        }
+
+        return await products
+            .Include(product => product.Category)
+            .Include(product => product.Variants.Where(variant => variant.IsActive))
+            .OrderBy(product => product.Category.Name)
+            .ThenBy(product => product.Brand)
+            .ThenBy(product => product.Model)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetCategoryNamesAsync(
+        CancellationToken cancellationToken = default) =>
+        await _db.ProductCategories
+            .AsNoTracking()
+            .Where(category => category.Products.Any(product => product.IsActive))
+            .OrderBy(category => category.Name)
+            .Select(category => category.Name)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Product>> GetByCategoryNameAsync(
+        string categoryName,
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.Products
+            .AsNoTracking()
+            .Where(product => product.IsActive && product.Category.Name == categoryName)
+            .Include(product => product.Category)
+            .Include(product => product.Variants.Where(variant => variant.IsActive))
+            .OrderBy(product => product.Brand)
+            .ThenBy(product => product.Model)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ProductVariant>> GetBookingChoicesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.ProductVariants
+            .AsNoTracking()
+            .Where(variant => variant.IsActive && variant.Product.IsActive)
+            .Include(variant => variant.Product)
+                .ThenInclude(product => product.Category)
+            .OrderBy(variant => variant.Product.Category.Name)
+            .ThenBy(variant => variant.Product.Brand)
+            .ThenBy(variant => variant.Product.Model)
+            .ThenBy(variant => variant.OptionLabel)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ProductVariant>> GetVariantsByIdsAsync(
+        IReadOnlyCollection<int> productVariantIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = productVariantIds.Distinct().ToArray();
+        if (ids.Length == 0)
+        {
+            return Array.Empty<ProductVariant>();
+        }
+
+        return await _db.ProductVariants
+            .AsNoTracking()
+            .Where(variant => ids.Contains(variant.ProductVariantId)
+                && variant.IsActive
+                && variant.Product.IsActive)
+            .Include(variant => variant.Product)
+                .ThenInclude(product => product.Category)
+            .ToListAsync(cancellationToken);
     }
 }

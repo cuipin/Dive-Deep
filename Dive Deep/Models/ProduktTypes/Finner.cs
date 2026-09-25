@@ -1,19 +1,7 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+namespace Dive_Deep.Models.ProduktTypes;
 
-namespace Dive_Deep.Models.ProduktTypes
+public class Finner : ProductDisplayModel
 {
-    public enum FinStørrelse
-    {
-        XS,
-        S,
-        M,
-        L,
-        XL,
-    }
-
-    public class Finner : Product
-    {
-        public string? Model { get; set; }
-        public List<FinStørrelse> Størrelse { get; set; } = new();
-    }
+    public string Model { get; set; } = string.Empty;
+    public string Størrelse { get; set; } = string.Empty;
 }

@@ -17,7 +17,7 @@ namespace Dive_Deep.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "9.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -41,6 +41,14 @@ namespace Dive_Deep.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -63,6 +71,11 @@ namespace Dive_Deep.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -95,27 +108,309 @@ namespace Dive_Deep.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingId"));
 
-                    b.Property<string>("ApplicationUserId")
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime2");
+                    b.HasKey("BookingId");
+
+                    b.HasIndex("UserId", "CreatedAtUtc");
+
+                    b.ToTable("Bookings");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.BookingAllocation", b =>
+                {
+                    b.Property<int>("BookingAllocationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingAllocationId"));
+
+                    b.Property<int>("BookingItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EquipmentUnitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BookingAllocationId");
+
+                    b.HasIndex("EquipmentUnitId");
+
+                    b.HasIndex("BookingItemId", "EquipmentUnitId")
+                        .IsUnique();
+
+                    b.ToTable("BookingAllocations");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.BookingItem", b =>
+                {
+                    b.Property<int>("BookingItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingItemId"));
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DailyRateAtBooking")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("StartTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("BookingItemId");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.HasIndex("StartTime", "EndTime");
+
+                    b.ToTable("BookingItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_BookingItems_Quantity_Positive", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_BookingItems_TimeRange", "[EndTime] > [StartTime]");
+                        });
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Cart", b =>
+                {
+                    b.Property<int>("CartId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartId"));
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("CartId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Carts");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.CartItem", b =>
+                {
+                    b.Property<int>("CartItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartItemId"));
+
+                    b.Property<int>("CartId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("EndTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("StartTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("CartItemId");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.ToTable("CartItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_CartItems_Quantity_Positive", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_CartItems_TimeRange", "[EndTime] > [StartTime]");
+                        });
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.EquipmentUnit", b =>
+                {
+                    b.Property<int>("EquipmentUnitId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EquipmentUnitId"));
+
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.HasKey("EquipmentUnitId");
+
+                    b.HasIndex("AssetTag")
+                        .IsUnique();
+
+                    b.HasIndex("ProductVariantId", "Status");
+
+                    b.ToTable("EquipmentUnits");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Product", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("ImageFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<int>("ProductCategoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductId");
+
+                    b.HasIndex("ProductCategoryId", "Brand", "Model")
+                        .IsUnique();
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.ProductCategory", b =>
+                {
+                    b.Property<int>("ProductCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductCategoryId"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("ProductCategoryId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.ProductVariant", b =>
+                {
+                    b.Property<int>("ProductVariantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductVariantId"));
+
+                    b.Property<decimal>("DailyRate")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("EquipmentType")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("FirstStage")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Octopus")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("OptionLabel")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("SecondStage")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("Size")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
 
-                    b.HasKey("BookingId");
+                    b.Property<decimal?>("ThicknessMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
-                    b.HasIndex("ApplicationUserId");
+                    b.Property<decimal?>("VolumeLiters")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
-                    b.ToTable("Bookings");
+                    b.HasKey("ProductVariantId");
+
+                    b.HasIndex("ProductId", "OptionLabel")
+                        .IsUnique();
+
+                    b.ToTable("ProductVariants");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -257,9 +552,114 @@ namespace Dive_Deep.Migrations
 
             modelBuilder.Entity("Dive_Deep.Models.Booking", b =>
                 {
-                    b.HasOne("Dive_Deep.Data.ApplicationUser", null)
+                    b.HasOne("Dive_Deep.Data.ApplicationUser", "User")
                         .WithMany("Bookings")
-                        .HasForeignKey("ApplicationUserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.BookingAllocation", b =>
+                {
+                    b.HasOne("Dive_Deep.Models.BookingItem", "BookingItem")
+                        .WithMany("Allocations")
+                        .HasForeignKey("BookingItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dive_Deep.Models.EquipmentUnit", "EquipmentUnit")
+                        .WithMany("Allocations")
+                        .HasForeignKey("EquipmentUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BookingItem");
+
+                    b.Navigation("EquipmentUnit");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.BookingItem", b =>
+                {
+                    b.HasOne("Dive_Deep.Models.Booking", "Booking")
+                        .WithMany("Items")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dive_Deep.Models.ProductVariant", "ProductVariant")
+                        .WithMany("BookingItems")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("ProductVariant");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Cart", b =>
+                {
+                    b.HasOne("Dive_Deep.Data.ApplicationUser", "User")
+                        .WithOne("Cart")
+                        .HasForeignKey("Dive_Deep.Models.Cart", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.CartItem", b =>
+                {
+                    b.HasOne("Dive_Deep.Models.Cart", "Cart")
+                        .WithMany("Items")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dive_Deep.Models.ProductVariant", "ProductVariant")
+                        .WithMany("CartItems")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("ProductVariant");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.EquipmentUnit", b =>
+                {
+                    b.HasOne("Dive_Deep.Models.ProductVariant", "ProductVariant")
+                        .WithMany("EquipmentUnits")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductVariant");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Product", b =>
+                {
+                    b.HasOne("Dive_Deep.Models.ProductCategory", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.ProductVariant", b =>
+                {
+                    b.HasOne("Dive_Deep.Models.Product", "Product")
+                        .WithMany("Variants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -316,6 +716,47 @@ namespace Dive_Deep.Migrations
             modelBuilder.Entity("Dive_Deep.Data.ApplicationUser", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("Cart");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Booking", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.BookingItem", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Cart", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.EquipmentUnit", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.Product", b =>
+                {
+                    b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.ProductCategory", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("Dive_Deep.Models.ProductVariant", b =>
+                {
+                    b.Navigation("BookingItems");
+
+                    b.Navigation("CartItems");
+
+                    b.Navigation("EquipmentUnits");
                 });
 #pragma warning restore 612, 618
         }

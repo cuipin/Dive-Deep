@@ -1,15 +1,7 @@
-﻿namespace Dive_Deep.Models.ProduktTypes
-{
-    public enum BCDStørrelse
-    {
-        S,
-        M,
-        L,
-    }
+namespace Dive_Deep.Models.ProduktTypes;
 
-    public class BCD : Product
-    {
-        public string? Model { get; set; }
-        public List<BCDStørrelse> Størrelse { get; set; } = new();
-    }
+public class BCD : ProductDisplayModel
+{
+    public string Model { get; set; } = string.Empty;
+    public string Størrelse { get; set; } = string.Empty;
 }

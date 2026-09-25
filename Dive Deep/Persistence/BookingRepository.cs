@@ -1,48 +1,282 @@
-﻿using Dive_Deep.Models;
+using System.Data;
+using Dive_Deep.Data;
+using Dive_Deep.Models;
+using Dive_Deep.Services.Contracts;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
-namespace Dive_Deep.Persistence
+namespace Dive_Deep.Persistence;
+
+public class BookingRepository : IBookingRepository
 {
-    public class BookingRepository : IBookingRepository
+    private readonly Dive_DeepContext _db;
+
+    public BookingRepository(Dive_DeepContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Booking>> GetForUserAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        private static readonly List<Booking> bookings = new List<Booking>();
+        return await _db.Bookings
+            .AsNoTracking()
+            .Where(booking => booking.UserId == userId)
+            .Include(booking => booking.Items)
+                .ThenInclude(item => item.ProductVariant)
+                    .ThenInclude(variant => variant.Product)
+                        .ThenInclude(product => product.Category)
+            .OrderByDescending(booking => booking.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
 
-        public void Add(Booking booking)
+    public Task<Booking?> GetForUserAsync(
+        int bookingId,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        return _db.Bookings
+            .AsNoTracking()
+            .Where(booking => booking.BookingId == bookingId && booking.UserId == userId)
+            .Include(booking => booking.Items)
+                .ThenInclude(item => item.ProductVariant)
+                    .ThenInclude(variant => variant.Product)
+                        .ThenInclude(product => product.Category)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<BookingReservationOutcome> CreateWithAllocationsAsync(
+        Booking booking,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var selectedUnits = new List<(int UnitId, DateTimeOffset Start, DateTimeOffset End)>();
+
+        foreach (var item in booking.Items)
         {
-            booking.BookingId = bookings.Count + 1;
-            bookings.Add(booking);
-        }
+            var variant = await _db.ProductVariants
+                .AsNoTracking()
+                .Where(candidate => candidate.ProductVariantId == item.ProductVariantId
+                    && candidate.IsActive
+                    && candidate.Product.IsActive)
+                .Select(candidate => new { candidate.DailyRate })
+                .SingleOrDefaultAsync(cancellationToken);
 
-        public void Delete(int id)
-        {
-            var booking = GetById(id);
-
-            if (booking != null)
+            if (variant is null)
             {
-                bookings.Remove(booking);
+                return BookingReservationOutcome.ProductVariantNotFound;
+            }
+
+            item.DailyRateAtBooking = variant.DailyRate;
+            var conflictingSelectedIds = selectedUnits
+                .Where(selected => selected.Start < item.EndTime && selected.End > item.StartTime)
+                .Select(selected => selected.UnitId)
+                .ToArray();
+
+            List<int> unitIds;
+            try
+            {
+                unitIds = await _db.EquipmentUnits
+                    .AsNoTracking()
+                    .Where(unit => unit.ProductVariantId == item.ProductVariantId
+                        && unit.Status == EquipmentUnitStatus.Active
+                        && !conflictingSelectedIds.Contains(unit.EquipmentUnitId))
+                    .Where(unit => !_db.BookingAllocations.Any(allocation =>
+                        allocation.EquipmentUnitId == unit.EquipmentUnitId
+                        && allocation.BookingItem.Booking.Status != BookingStatus.Cancelled
+                        && allocation.BookingItem.StartTime < item.EndTime
+                        && allocation.BookingItem.EndTime > item.StartTime))
+                    .OrderBy(unit => unit.AssetTag)
+                    .Select(unit => unit.EquipmentUnitId)
+                    .Take(item.Quantity)
+                    .ToListAsync(cancellationToken);
+            }
+            catch (SqlException exception) when (exception.Number == 1205)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return BookingReservationOutcome.Unavailable;
+            }
+
+            if (unitIds.Count < item.Quantity)
+            {
+                return BookingReservationOutcome.Unavailable;
+            }
+
+            foreach (var unitId in unitIds)
+            {
+                item.Allocations.Add(new BookingAllocation
+                {
+                    BookingItem = item,
+                    EquipmentUnitId = unitId
+                });
+                selectedUnits.Add((unitId, item.StartTime, item.EndTime));
             }
         }
 
-        public List<Booking> GetAll()
+        _db.Bookings.Add(booking);
+        try
         {
-            return bookings;
+            await _db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return BookingReservationOutcome.Reserved;
         }
-
-        public Booking? GetById(int id)
+        catch (DbUpdateException exception) when (IsInventoryRace(exception))
         {
-            return bookings.FirstOrDefault(b => b.BookingId == id);
-        }
-
-        public void Update(Booking booking)
-        {
-            var existing = GetById(booking.BookingId);
-
-            if (existing != null)
-            {
-                existing.ProductId = booking.ProductId;
-                existing.UserId = booking.UserId;
-                existing.StartTime = booking.StartTime;
-                existing.EndTime = booking.EndTime;
-            }
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingReservationOutcome.Unavailable;
         }
     }
+
+    public async Task<BookingReservationOutcome> UpdateSingleLineAsync(
+        int bookingId,
+        string userId,
+        BookingLineRequest line,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var booking = await _db.Bookings
+            .Include(candidate => candidate.Items)
+                .ThenInclude(item => item.Allocations)
+            .SingleOrDefaultAsync(
+                candidate => candidate.BookingId == bookingId && candidate.UserId == userId,
+                cancellationToken);
+
+        if (booking is null || booking.Status != BookingStatus.Confirmed)
+        {
+            return BookingReservationOutcome.BookingNotFound;
+        }
+
+        if (booking.Items.Count != 1)
+        {
+            return BookingReservationOutcome.UnsupportedMultiLineEdit;
+        }
+
+        var item = booking.Items.Single();
+        var variant = await _db.ProductVariants
+            .AsNoTracking()
+            .Where(candidate => candidate.ProductVariantId == line.ProductVariantId
+                && candidate.IsActive
+                && candidate.Product.IsActive)
+            .Select(candidate => new { candidate.DailyRate })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (variant is null)
+        {
+            return BookingReservationOutcome.ProductVariantNotFound;
+        }
+
+        _db.BookingAllocations.RemoveRange(item.Allocations);
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsInventoryRace(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingReservationOutcome.Unavailable;
+        }
+
+        item.ProductVariantId = line.ProductVariantId;
+        item.Quantity = line.Quantity;
+        item.StartTime = line.StartTime;
+        item.EndTime = line.EndTime;
+        item.DailyRateAtBooking = variant.DailyRate;
+        booking.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        List<int> unitIds;
+        try
+        {
+            unitIds = await _db.EquipmentUnits
+                .AsNoTracking()
+                .Where(unit => unit.ProductVariantId == line.ProductVariantId
+                    && unit.Status == EquipmentUnitStatus.Active)
+                .Where(unit => !_db.BookingAllocations.Any(allocation =>
+                    allocation.EquipmentUnitId == unit.EquipmentUnitId
+                    && allocation.BookingItem.BookingId != bookingId
+                    && allocation.BookingItem.Booking.Status != BookingStatus.Cancelled
+                    && allocation.BookingItem.StartTime < line.EndTime
+                    && allocation.BookingItem.EndTime > line.StartTime))
+                .OrderBy(unit => unit.AssetTag)
+                .Select(unit => unit.EquipmentUnitId)
+                .Take(line.Quantity)
+                .ToListAsync(cancellationToken);
+        }
+        catch (SqlException exception) when (exception.Number == 1205)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingReservationOutcome.Unavailable;
+        }
+
+        if (unitIds.Count < line.Quantity)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingReservationOutcome.Unavailable;
+        }
+
+        foreach (var unitId in unitIds)
+        {
+            item.Allocations.Add(new BookingAllocation
+            {
+                BookingItem = item,
+                EquipmentUnitId = unitId
+            });
+        }
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return BookingReservationOutcome.Reserved;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingReservationOutcome.ConcurrencyConflict;
+        }
+        catch (DbUpdateException exception) when (IsInventoryRace(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingReservationOutcome.Unavailable;
+        }
+    }
+
+    public async Task<BookingReservationOutcome> CancelAsync(
+        int bookingId,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var booking = await _db.Bookings.SingleOrDefaultAsync(
+            candidate => candidate.BookingId == bookingId && candidate.UserId == userId,
+            cancellationToken);
+
+        if (booking is null)
+        {
+            return BookingReservationOutcome.BookingNotFound;
+        }
+
+        if (booking.Status == BookingStatus.Cancelled)
+        {
+            return BookingReservationOutcome.Reserved;
+        }
+
+        booking.Status = BookingStatus.Cancelled;
+        booking.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+            return BookingReservationOutcome.Reserved;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return BookingReservationOutcome.ConcurrencyConflict;
+        }
+    }
+
+    private static bool IsInventoryRace(DbUpdateException exception) =>
+        exception.GetBaseException() is SqlException { Number: 1205 or 2601 or 2627 };
 }
