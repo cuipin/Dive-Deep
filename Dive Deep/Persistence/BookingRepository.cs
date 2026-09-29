@@ -9,15 +9,28 @@ namespace Dive_Deep.Persistence;
 
 public class BookingRepository : IBookingRepository
 {
-    private readonly Dive_DeepContext _db;
+    private readonly Dive_DeepContext _DiveDeepContext;
 
-    public BookingRepository(Dive_DeepContext db) => _db = db;
+    public BookingRepository(Dive_DeepContext Database) => _DiveDeepContext = Database;
+
+    public async Task<IReadOnlyList<Booking>> GetAllBookingsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _DiveDeepContext.Bookings
+            .AsNoTracking()
+            .Include(booking => booking.Items)
+                .ThenInclude(item => item.ProductVariant)
+                    .ThenInclude(variant => variant.Product)
+                        .ThenInclude(product => product.Category)
+            .OrderByDescending(booking => booking.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<Booking>> GetForUserAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        return await _db.Bookings
+        return await _DiveDeepContext.Bookings
             .AsNoTracking()
             .Where(booking => booking.UserId == userId)
             .Include(booking => booking.Items)
@@ -33,7 +46,7 @@ public class BookingRepository : IBookingRepository
         string userId,
         CancellationToken cancellationToken = default)
     {
-        return _db.Bookings
+        return _DiveDeepContext.Bookings
             .AsNoTracking()
             .Where(booking => booking.BookingId == bookingId && booking.UserId == userId)
             .Include(booking => booking.Items)
@@ -47,7 +60,7 @@ public class BookingRepository : IBookingRepository
         Booking booking,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _db.Database.BeginTransactionAsync(
+        await using var transaction = await _DiveDeepContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
 
@@ -55,7 +68,7 @@ public class BookingRepository : IBookingRepository
 
         foreach (var item in booking.Items)
         {
-            var variant = await _db.ProductVariants
+            var variant = await _DiveDeepContext.ProductVariants
                 .AsNoTracking()
                 .Where(candidate => candidate.ProductVariantId == item.ProductVariantId
                     && candidate.IsActive
@@ -77,12 +90,12 @@ public class BookingRepository : IBookingRepository
             List<int> unitIds;
             try
             {
-                unitIds = await _db.EquipmentUnits
+                unitIds = await _DiveDeepContext.EquipmentUnits
                     .AsNoTracking()
                     .Where(unit => unit.ProductVariantId == item.ProductVariantId
                         && unit.Status == EquipmentUnitStatus.Active
                         && !conflictingSelectedIds.Contains(unit.EquipmentUnitId))
-                    .Where(unit => !_db.BookingAllocations.Any(allocation =>
+                    .Where(unit => !_DiveDeepContext.BookingAllocations.Any(allocation =>
                         allocation.EquipmentUnitId == unit.EquipmentUnitId
                         && allocation.BookingItem.Booking.Status != BookingStatus.Cancelled
                         && allocation.BookingItem.StartTime < item.EndTime
@@ -114,10 +127,10 @@ public class BookingRepository : IBookingRepository
             }
         }
 
-        _db.Bookings.Add(booking);
+        _DiveDeepContext.Bookings.Add(booking);
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _DiveDeepContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return BookingReservationOutcome.Reserved;
         }
@@ -134,11 +147,11 @@ public class BookingRepository : IBookingRepository
         BookingLineRequest line,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _db.Database.BeginTransactionAsync(
+        await using var transaction = await _DiveDeepContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
 
-        var booking = await _db.Bookings
+        var booking = await _DiveDeepContext.Bookings
             .Include(candidate => candidate.Items)
                 .ThenInclude(item => item.Allocations)
             .SingleOrDefaultAsync(
@@ -156,7 +169,7 @@ public class BookingRepository : IBookingRepository
         }
 
         var item = booking.Items.Single();
-        var variant = await _db.ProductVariants
+        var variant = await _DiveDeepContext.ProductVariants
             .AsNoTracking()
             .Where(candidate => candidate.ProductVariantId == line.ProductVariantId
                 && candidate.IsActive
@@ -169,10 +182,10 @@ public class BookingRepository : IBookingRepository
             return BookingReservationOutcome.ProductVariantNotFound;
         }
 
-        _db.BookingAllocations.RemoveRange(item.Allocations);
+        _DiveDeepContext.BookingAllocations.RemoveRange(item.Allocations);
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _DiveDeepContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException exception) when (IsInventoryRace(exception))
         {
@@ -190,11 +203,11 @@ public class BookingRepository : IBookingRepository
         List<int> unitIds;
         try
         {
-            unitIds = await _db.EquipmentUnits
+            unitIds = await _DiveDeepContext.EquipmentUnits
                 .AsNoTracking()
                 .Where(unit => unit.ProductVariantId == line.ProductVariantId
                     && unit.Status == EquipmentUnitStatus.Active)
-                .Where(unit => !_db.BookingAllocations.Any(allocation =>
+                .Where(unit => !_DiveDeepContext.BookingAllocations.Any(allocation =>
                     allocation.EquipmentUnitId == unit.EquipmentUnitId
                     && allocation.BookingItem.BookingId != bookingId
                     && allocation.BookingItem.Booking.Status != BookingStatus.Cancelled
@@ -228,7 +241,7 @@ public class BookingRepository : IBookingRepository
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _DiveDeepContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return BookingReservationOutcome.Reserved;
         }
@@ -249,7 +262,7 @@ public class BookingRepository : IBookingRepository
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var booking = await _db.Bookings.SingleOrDefaultAsync(
+        var booking = await _DiveDeepContext.Bookings.SingleOrDefaultAsync(
             candidate => candidate.BookingId == bookingId && candidate.UserId == userId,
             cancellationToken);
 
@@ -268,7 +281,7 @@ public class BookingRepository : IBookingRepository
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _DiveDeepContext.SaveChangesAsync(cancellationToken);
             return BookingReservationOutcome.Reserved;
         }
         catch (DbUpdateConcurrencyException)

@@ -8,9 +8,9 @@ namespace Dive_Deep.Persistence;
 
 public class CartRepository : ICartRepository
 {
-    private readonly Dive_DeepContext _db;
+    private readonly Dive_DeepContext _DiveDeepContext;
 
-    public CartRepository(Dive_DeepContext db) => _db = db;
+    public CartRepository(Dive_DeepContext Database) => _DiveDeepContext = Database;
 
     public async Task<Cart> GetOrCreateForUserAsync(
         string userId,
@@ -23,15 +23,15 @@ public class CartRepository : ICartRepository
         }
 
         var cart = new Cart { UserId = userId };
-        _db.Carts.Add(cart);
+        _DiveDeepContext.Carts.Add(cart);
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await _DiveDeepContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException exception) when (IsUniqueConflict(exception))
         {
-            _db.Entry(cart).State = EntityState.Detached;
+            _DiveDeepContext.Entry(cart).State = EntityState.Detached;
             return (await LoadCartAsync(userId, cancellationToken))!;
         }
 
@@ -48,7 +48,7 @@ public class CartRepository : ICartRepository
             return false;
         }
 
-        var cart = await _db.Carts
+        var cart = await _DiveDeepContext.Carts
             .Include(candidate => candidate.Items)
             .SingleOrDefaultAsync(candidate => candidate.UserId == userId, cancellationToken);
         if (cart is null)
@@ -57,7 +57,7 @@ public class CartRepository : ICartRepository
         }
 
         var variantIds = items.Select(item => item.ProductVariantId).Distinct().ToArray();
-        var activeVariantIds = await _db.ProductVariants
+        var activeVariantIds = await _DiveDeepContext.ProductVariants
             .Where(variant => variantIds.Contains(variant.ProductVariantId)
                 && variant.IsActive
                 && variant.Product.IsActive)
@@ -78,7 +78,7 @@ public class CartRepository : ICartRepository
             });
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _DiveDeepContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -89,7 +89,7 @@ public class CartRepository : ICartRepository
         DateTimeOffset endTime,
         CancellationToken cancellationToken = default)
     {
-        var item = await _db.CartItems
+        var item = await _DiveDeepContext.CartItems
             .SingleOrDefaultAsync(candidate =>
                 candidate.CartItemId == cartItemId && candidate.Cart.UserId == userId,
                 cancellationToken);
@@ -101,7 +101,7 @@ public class CartRepository : ICartRepository
 
         item.StartTime = startTime;
         item.EndTime = endTime;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _DiveDeepContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -110,7 +110,7 @@ public class CartRepository : ICartRepository
         int cartItemId,
         CancellationToken cancellationToken = default)
     {
-        var cartItem = await _db.CartItems
+        var cartItem = await _DiveDeepContext.CartItems
             .SingleOrDefaultAsync(item =>
                 item.CartItemId == cartItemId && item.Cart.UserId == userId,
                 cancellationToken);
@@ -120,8 +120,8 @@ public class CartRepository : ICartRepository
             return false;
         }
 
-        _db.CartItems.Remove(cartItem);
-        await _db.SaveChangesAsync(cancellationToken);
+        _DiveDeepContext.CartItems.Remove(cartItem);
+        await _DiveDeepContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -129,16 +129,16 @@ public class CartRepository : ICartRepository
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var items = await _db.CartItems
+        var items = await _DiveDeepContext.CartItems
             .Where(item => item.Cart.UserId == userId)
             .ToListAsync(cancellationToken);
 
-        _db.CartItems.RemoveRange(items);
-        await _db.SaveChangesAsync(cancellationToken);
+        _DiveDeepContext.CartItems.RemoveRange(items);
+        await _DiveDeepContext.SaveChangesAsync(cancellationToken);
     }
 
     private Task<Cart?> LoadCartAsync(string userId, CancellationToken cancellationToken) =>
-        _db.Carts
+        _DiveDeepContext.Carts
             .AsNoTracking()
             .Where(cart => cart.UserId == userId)
             .Include(cart => cart.Items)

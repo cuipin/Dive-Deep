@@ -6,9 +6,9 @@ namespace Dive_Deep.Persistence;
 
 public class ProductRepository : IProductRepository
 {
-    private readonly Dive_DeepContext _db;
+    private readonly Dive_DeepContext _DiveDeepContext;
 
-    public ProductRepository(Dive_DeepContext db) => _db = db;
+    public ProductRepository(Dive_DeepContext Database) => _DiveDeepContext = Database;
 
     public async Task<IReadOnlyList<Product>> SearchProductsAsync(
         string? search,
@@ -17,7 +17,7 @@ public class ProductRepository : IProductRepository
         decimal? maximumDailyRate,
         CancellationToken cancellationToken = default)
     {
-        var products = _db.Products
+        var products = _DiveDeepContext.Products
             .AsNoTracking()
             .Where(product => product.IsActive);
 
@@ -54,7 +54,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<IReadOnlyList<string>> GetCategoryNamesAsync(
         CancellationToken cancellationToken = default) =>
-        await _db.ProductCategories
+        await _DiveDeepContext.ProductCategories
             .AsNoTracking()
             .Where(category => category.Products.Any(product => product.IsActive))
             .OrderBy(category => category.Name)
@@ -65,7 +65,7 @@ public class ProductRepository : IProductRepository
         string categoryName,
         CancellationToken cancellationToken = default)
     {
-        return await _db.Products
+        return await _DiveDeepContext.Products
             .AsNoTracking()
             .Where(product => product.IsActive && product.Category.Name == categoryName)
             .Include(product => product.Category)
@@ -78,7 +78,7 @@ public class ProductRepository : IProductRepository
     public async Task<IReadOnlyList<ProductVariant>> GetBookingChoicesAsync(
         CancellationToken cancellationToken = default)
     {
-        return await _db.ProductVariants
+        return await _DiveDeepContext.ProductVariants
             .AsNoTracking()
             .Where(variant => variant.IsActive && variant.Product.IsActive)
             .Include(variant => variant.Product)
@@ -100,7 +100,7 @@ public class ProductRepository : IProductRepository
             return Array.Empty<ProductVariant>();
         }
 
-        return await _db.ProductVariants
+        return await _DiveDeepContext.ProductVariants
             .AsNoTracking()
             .Where(variant => ids.Contains(variant.ProductVariantId)
                 && variant.IsActive

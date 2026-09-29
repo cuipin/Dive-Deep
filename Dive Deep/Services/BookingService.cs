@@ -10,6 +10,9 @@ public class BookingService : IBookingService
 
     public BookingService(IBookingRepository bookings) => _bookings = bookings;
 
+    public Task<IReadOnlyList<Booking>> GetAllBookingsAsync(CancellationToken cancellationToken = default) =>
+        _bookings.GetAllBookingsAsync(cancellationToken);
+
     public Task<IReadOnlyList<Booking>> GetForUserAsync(
         string userId,
         CancellationToken cancellationToken = default) =>
