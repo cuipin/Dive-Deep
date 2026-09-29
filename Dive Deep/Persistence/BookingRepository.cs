@@ -15,9 +15,11 @@ public class BookingRepository : IBookingRepository
 
     public async Task<IReadOnlyList<Booking>> GetAllBookingsAsync(
         CancellationToken cancellationToken = default)
+    // returns all bookings from every user so the admin can see them and manage them
     {
         return await _DiveDeepContext.Bookings
             .AsNoTracking()
+            .Include(booking => booking.User)
             .Include(booking => booking.Items)
                 .ThenInclude(item => item.ProductVariant)
                     .ThenInclude(variant => variant.Product)
@@ -33,6 +35,7 @@ public class BookingRepository : IBookingRepository
         return await _DiveDeepContext.Bookings
             .AsNoTracking()
             .Where(booking => booking.UserId == userId)
+            .Include(booking => booking.User)
             .Include(booking => booking.Items)
                 .ThenInclude(item => item.ProductVariant)
                     .ThenInclude(variant => variant.Product)
@@ -43,12 +46,14 @@ public class BookingRepository : IBookingRepository
 
     public Task<Booking?> GetForUserAsync(
         int bookingId,
-        string userId,
+        string? userId,
         CancellationToken cancellationToken = default)
     {
         return _DiveDeepContext.Bookings
             .AsNoTracking()
-            .Where(booking => booking.BookingId == bookingId && booking.UserId == userId)
+            .Where(booking => booking.BookingId == bookingId
+                && (userId == null || booking.UserId == userId))
+            .Include(booking => booking.User)
             .Include(booking => booking.Items)
                 .ThenInclude(item => item.ProductVariant)
                     .ThenInclude(variant => variant.Product)
@@ -143,7 +148,9 @@ public class BookingRepository : IBookingRepository
 
     public async Task<BookingReservationOutcome> UpdateSingleLineAsync(
         int bookingId,
-        string userId,
+        int bookingItemId,
+        string? userId,
+        bool isAdmin,
         BookingLineRequest line,
         CancellationToken cancellationToken = default)
     {
@@ -155,7 +162,8 @@ public class BookingRepository : IBookingRepository
             .Include(candidate => candidate.Items)
                 .ThenInclude(item => item.Allocations)
             .SingleOrDefaultAsync(
-                candidate => candidate.BookingId == bookingId && candidate.UserId == userId,
+                candidate => candidate.BookingId == bookingId
+                    && (isAdmin || candidate.UserId == userId),
                 cancellationToken);
 
         if (booking is null || booking.Status != BookingStatus.Confirmed)
@@ -163,12 +171,11 @@ public class BookingRepository : IBookingRepository
             return BookingReservationOutcome.BookingNotFound;
         }
 
-        if (booking.Items.Count != 1)
+        var item = booking.Items.SingleOrDefault(candidate => candidate.BookingItemId == bookingItemId);
+        if (item is null)
         {
-            return BookingReservationOutcome.UnsupportedMultiLineEdit;
+            return BookingReservationOutcome.BookingNotFound;
         }
-
-        var item = booking.Items.Single();
         var variant = await _DiveDeepContext.ProductVariants
             .AsNoTracking()
             .Where(candidate => candidate.ProductVariantId == line.ProductVariantId
@@ -209,7 +216,7 @@ public class BookingRepository : IBookingRepository
                     && unit.Status == EquipmentUnitStatus.Active)
                 .Where(unit => !_DiveDeepContext.BookingAllocations.Any(allocation =>
                     allocation.EquipmentUnitId == unit.EquipmentUnitId
-                    && allocation.BookingItem.BookingId != bookingId
+                    && allocation.BookingItemId != bookingItemId
                     && allocation.BookingItem.Booking.Status != BookingStatus.Cancelled
                     && allocation.BookingItem.StartTime < line.EndTime
                     && allocation.BookingItem.EndTime > line.StartTime))
@@ -260,10 +267,12 @@ public class BookingRepository : IBookingRepository
     public async Task<BookingReservationOutcome> CancelAsync(
         int bookingId,
         string userId,
+        bool isAdmin,
         CancellationToken cancellationToken = default)
     {
         var booking = await _DiveDeepContext.Bookings.SingleOrDefaultAsync(
-            candidate => candidate.BookingId == bookingId && candidate.UserId == userId,
+            candidate => candidate.BookingId == bookingId
+                && (isAdmin || candidate.UserId == userId),
             cancellationToken);
 
         if (booking is null)

@@ -28,8 +28,19 @@ public class BookingsController : Controller
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
+        var isAdmin = User.IsInRole("Admin");
         var userId = _userManager.GetUserId(User)!;
-        var bookings = await _bookings.GetForUserAsync(userId, cancellationToken);
+
+        IReadOnlyList<Booking> bookings;
+
+        if (isAdmin)
+        {
+            bookings = await _bookings.GetAllBookingsAsync(cancellationToken);
+        }
+        else
+        {
+            bookings = await _bookings.GetForUserAsync(userId, cancellationToken);
+        }
 
         foreach (var booking in bookings)
         {
@@ -40,6 +51,7 @@ public class BookingsController : Controller
             }
         }
 
+        ViewBag.IsAdmin = isAdmin;
         return View(bookings.ToList());
     }
 
@@ -85,7 +97,7 @@ public class BookingsController : Controller
         var userId = _userManager.GetUserId(User)!;
         var result = await _bookings.CreateAsync(
             userId,
-            [new BookingLineRequest(model.Booking.ProductId, 1, start, end)],
+            [new BookingLineRequest(model.Booking.ProductId, model.Booking.Quantity, start, end)],
             cancellationToken);
 
         if (!result.Succeeded)
@@ -95,13 +107,23 @@ public class BookingsController : Controller
             return View("BookingView", model);
         }
 
+        TempData["BookingSuccess"] = "Bookingen blev oprettet.";
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Edit(int? id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Edit(
+        int? id,
+        int? itemId,
+        CancellationToken cancellationToken)
     {
-        var booking = await _bookings.GetForUserAsync(id ?? 0, _userManager.GetUserId(User)!, cancellationToken);
-        var item = booking?.Items.OrderBy(candidate => candidate.BookingItemId).FirstOrDefault();
+        var isAdmin = User.IsInRole("Admin");
+        var booking = await _bookings.GetForUserAsync(
+            id ?? 0,
+            isAdmin ? null : _userManager.GetUserId(User),
+            cancellationToken);
+        var item = itemId.HasValue
+            ? booking?.Items.FirstOrDefault(candidate => candidate.BookingItemId == itemId.Value)
+            : booking?.Items.OrderBy(candidate => candidate.BookingItemId).FirstOrDefault();
 
         if (booking is null || item is null || booking.Status != BookingStatus.Confirmed)
         {
@@ -114,13 +136,18 @@ public class BookingsController : Controller
             Booking = new BookingFormInput
             {
                 BookingId = booking.BookingId,
+                BookingItemId = item.BookingItemId,
                 ProductId = item.ProductVariantId,
+                Quantity = item.Quantity,
                 StartTime = DanishDateTime.ToLocal(item.StartTime),
                 EndTime = DanishDateTime.ToLocal(item.EndTime)
             },
-            Products = await GetProductChoicesAsync(cancellationToken)
+            Products = await GetProductChoicesAsync(cancellationToken),
+            CustomerName = $"{booking.User?.FirstName} {booking.User?.LastName}".Trim(),
+            CustomerEmail = booking.User?.Email
         };
 
+        ViewBag.IsAdmin = isAdmin;
         return View("BookingView", model);
     }
 
@@ -131,31 +158,34 @@ public class BookingsController : Controller
         CancellationToken cancellationToken)
     {
         ViewBag.Action = "edit";
+        ViewBag.IsAdmin = User.IsInRole("Admin");
         if (!ModelState.IsValid)
         {
-            model.Products = await GetProductChoicesAsync(cancellationToken);
+            await PopulateEditDetailsAsync(model, cancellationToken);
             return View("BookingView", model);
         }
 
         if (!TryConvertTimes(model.Booking, out var start, out var end))
         {
-            model.Products = await GetProductChoicesAsync(cancellationToken);
+            await PopulateEditDetailsAsync(model, cancellationToken);
             return View("BookingView", model);
         }
 
         var result = await _bookings.UpdateSingleLineAsync(
             model.Booking.BookingId,
+            model.Booking.BookingItemId,
             _userManager.GetUserId(User)!,
-            new BookingLineRequest(model.Booking.ProductId, 1, start, end),
+            User.IsInRole("Admin"),
+            new BookingLineRequest(model.Booking.ProductId, model.Booking.Quantity, start, end),
             cancellationToken);
 
         if (!result.Succeeded)
         {
             AddBookingError(result);
-            model.Products = await GetProductChoicesAsync(cancellationToken);
+            await PopulateEditDetailsAsync(model, cancellationToken);
             return View("BookingView", model);
         }
-
+        TempData["BookingSuccess"] = "Bookingens udstyr og lejeperiode blev opdateret.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -166,9 +196,16 @@ public class BookingsController : Controller
         var result = await _bookings.CancelAsync(
             id,
             _userManager.GetUserId(User)!,
+            User.IsInRole("Admin"),
             cancellationToken);
 
-        return result.Succeeded ? RedirectToAction(nameof(Index)) : NotFound();
+        if (!result.Succeeded)
+        {
+            return NotFound();
+        }
+
+        TempData["BookingSuccess"] = "Bookingen blev annulleret.";
+        return RedirectToAction(nameof(Index));
     }
 
     private async Task<List<ProductChoiceViewModel>> GetProductChoicesAsync(
@@ -183,6 +220,24 @@ public class BookingsController : Controller
             Model = variant.Product.Model,
             OptionLabel = variant.OptionLabel
         }).ToList();
+    }
+
+    private async Task PopulateEditDetailsAsync(
+        BookingViewModel model,
+        CancellationToken cancellationToken)
+    {
+        model.Products = await GetProductChoicesAsync(cancellationToken);
+        var isAdmin = User.IsInRole("Admin");
+        var booking = await _bookings.GetForUserAsync(
+            model.Booking.BookingId,
+            isAdmin ? null : _userManager.GetUserId(User),
+            cancellationToken);
+
+        if (isAdmin && booking?.User is not null)
+        {
+            model.CustomerName = $"{booking.User.FirstName} {booking.User.LastName}".Trim();
+            model.CustomerEmail = booking.User.Email;
+        }
     }
 
     private bool TryConvertTimes(BookingFormInput input, out DateTimeOffset start, out DateTimeOffset end)

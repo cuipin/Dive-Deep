@@ -6,6 +6,5 @@ public enum BookingReservationOutcome
     Unavailable,
     ProductVariantNotFound,
     BookingNotFound,
-    UnsupportedMultiLineEdit,
     ConcurrencyConflict
 }

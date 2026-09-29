@@ -32,8 +32,28 @@ public class Program
         builder.Services.AddScoped<IBookingService, BookingService>();
         builder.Services.AddScoped<IProductService, ProductService>();
         builder.Services.AddScoped<ICartService, CartService>();
+        builder.Services.AddHttpClient<IDiveConditionsService, OpenMeteoDiveConditionsService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
         var app = builder.Build();
+
+        var grantAdminArgument = args.FirstOrDefault(argument =>
+            argument.StartsWith("--grant-admin=", StringComparison.OrdinalIgnoreCase));
+        if (grantAdminArgument is not null)
+        {
+            var email = grantAdminArgument["--grant-admin=".Length..].Trim();
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ArgumentException("Use --grant-admin=name@example.com to assign the Admin role.");
+            }
+
+            await using var scope = app.Services.CreateAsyncScope();
+            await AdminUserSetup.GrantAdminAsync(scope.ServiceProvider, email);
+            Console.WriteLine($"Admin role is assigned to {email}.");
+            return;
+        }
 
         // Seeding is an explicit command and runs only after the developer applies migrations.
         if (args.Contains("--seed-catalog", StringComparer.OrdinalIgnoreCase))

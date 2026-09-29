@@ -20,7 +20,7 @@ public class BookingService : IBookingService
 
     public Task<Booking?> GetForUserAsync(
         int bookingId,
-        string userId,
+        string? userId,
         CancellationToken cancellationToken = default) =>
         _bookings.GetForUserAsync(bookingId, userId, cancellationToken);
 
@@ -83,7 +83,9 @@ public class BookingService : IBookingService
 
     public async Task<BookingOperationResult> UpdateSingleLineAsync(
         int bookingId,
-        string userId,
+        int bookingItemId,
+        string? userId,
+        bool isAdmin,
         BookingLineRequest line,
         CancellationToken cancellationToken = default)
     {
@@ -100,7 +102,7 @@ public class BookingService : IBookingService
         };
 
         var outcome = await _bookings.UpdateSingleLineAsync(
-            bookingId, userId, normalizedLine, cancellationToken);
+            bookingId, bookingItemId, userId, isAdmin, normalizedLine, cancellationToken);
 
         return outcome switch
         {
@@ -109,8 +111,6 @@ public class BookingService : IBookingService
                 "ProductNotFound", "Det valgte udstyr findes ikke eller kan ikke lejes."),
             BookingReservationOutcome.Unavailable => BookingOperationResult.Failure(
                 "Unavailable", "Der er ikke nok ledige enheder i den valgte periode."),
-            BookingReservationOutcome.UnsupportedMultiLineEdit => BookingOperationResult.Failure(
-                "MultiLineEdit", "En booking med flere linjer kan endnu ikke redigeres fra denne formular."),
             BookingReservationOutcome.ConcurrencyConflict => BookingOperationResult.Failure(
                 "ConcurrencyConflict", "Bookingen blev ændret samtidigt. Genindlæs siden og prøv igen."),
             _ => BookingOperationResult.Failure("BookingNotFound", "Bookingen blev ikke fundet.")
@@ -120,9 +120,10 @@ public class BookingService : IBookingService
     public async Task<BookingOperationResult> CancelAsync(
         int bookingId,
         string userId,
+        bool isAdmin,
         CancellationToken cancellationToken = default)
     {
-        var outcome = await _bookings.CancelAsync(bookingId, userId, cancellationToken);
+        var outcome = await _bookings.CancelAsync(bookingId, userId, isAdmin, cancellationToken);
         return outcome switch
         {
             BookingReservationOutcome.Reserved => BookingOperationResult.Success(bookingId),

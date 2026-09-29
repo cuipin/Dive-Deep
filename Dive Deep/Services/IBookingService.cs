@@ -9,7 +9,7 @@ public interface IBookingService
 
     Task<IReadOnlyList<Booking>> GetForUserAsync(string userId, CancellationToken cancellationToken = default);
 
-    Task<Booking?> GetForUserAsync(int bookingId, string userId, CancellationToken cancellationToken = default);
+    Task<Booking?> GetForUserAsync(int bookingId, string? userId, CancellationToken cancellationToken = default);
 
     Task<BookingOperationResult> CreateAsync(
         string userId,
@@ -18,12 +18,15 @@ public interface IBookingService
 
     Task<BookingOperationResult> UpdateSingleLineAsync(
         int bookingId,
-        string userId,
+        int bookingItemId,
+        string? userId,
+        bool isAdmin,
         BookingLineRequest line,
         CancellationToken cancellationToken = default);
 
     Task<BookingOperationResult> CancelAsync(
         int bookingId,
         string userId,
+        bool isAdmin,
         CancellationToken cancellationToken = default);
 }

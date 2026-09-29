@@ -315,19 +315,16 @@
                             <a class="nav-link" asp-controller="Products" asp-action="Index">Produkter</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" asp-controller="DiveConditions" asp-action="Index">Dykkerforhold</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Privacy">Om os</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Contact" asp-action="Index">Kontakt</a>
                         </li>
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Bookings" asp-action="Index">Admin</a>
-                            </li>
-                        }
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Bookings" asp-action="Index">Bookinger</a>
+                            <a class="nav-link" asp-controller="Bookings" asp-action="Index">@(User.IsInRole("Admin") ? "Admin · Bookinger" : "Bookinger")</a>
                         </li>
                     </ul>
 
@@ -340,12 +337,7 @@
 
                     <!-- Right side icons and login -->
                     <div class="navbar-right">
-                        <!-- Cart ikon med tal -->
-                        <a class="icon-btn" asp-controller="Cart" asp-action="Index" title="Indkøbskurv">
-                            <span style="position: relative;">
-                                🛒
-                            </span>
-                        </a>
+                        <a class="icon-btn" asp-controller="Cart" asp-action="Index" title="Indkøbskurv">🛒</a>
 
                         <!-- Login Button -->
                         @if (SignInManager.IsSignedIn(User))
@@ -353,16 +345,14 @@
                             <span class="nav-link greeting">Hej, @UserManager.GetUserName(User)!</span>
                             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" style="display:inline;">
                                 <button type="submit" class="btn-login" style="border:none;">
-                                    <span>👤</span>
-                                    <span>Log ud</span>
+                                    Log ud
                                 </button>
                             </form>
                         }
                         else
                         {
                             <a class="btn-login" asp-area="Identity" asp-page="/Account/Login">
-                                <span>👤</span>
-                                <span>Log ind</span>
+                                Log ind
                             </a>
                         }
                     </div>

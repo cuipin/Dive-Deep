@@ -6,3 +6,6 @@ Efter du har tilsluttet dig til en database, skal du kære kommandoer som update
 
 Derefter seed data ved at bruge dotnet run --project "/path/to/navn på projekt.csproj" -- --seed-catalog 
 
+# Giv admin-rettigheder
+dotnet run --project "C:\Users\chris\source\repos\cuipin\Dive-Deep\Dive Deep\Dive Deep.csproj" -- "--grant-admin=your-email@example.dk"
+
