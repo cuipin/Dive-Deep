@@ -85,6 +85,7 @@ public class BookingService : IBookingService
         int bookingId,
         int bookingItemId,
         string? userId,
+        byte[] expectedRowVersion,
         bool isAdmin,
         BookingLineRequest line,
         CancellationToken cancellationToken = default)
@@ -102,7 +103,7 @@ public class BookingService : IBookingService
         };
 
         var outcome = await _bookings.UpdateSingleLineAsync(
-            bookingId, bookingItemId, userId, isAdmin, normalizedLine, cancellationToken);
+            bookingId, bookingItemId, userId, expectedRowVersion, isAdmin, normalizedLine, cancellationToken);
 
         return outcome switch
         {

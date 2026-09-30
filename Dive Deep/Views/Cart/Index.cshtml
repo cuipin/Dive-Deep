@@ -100,7 +100,7 @@ else
             <p class="eyebrow">OVERSIGT</p>
             <h2>Leje i alt</h2>
             <p class="cart-total">@total.ToString("C0", danishCulture)</p>
-            <p class="muted-text">Samlet lejepris for de valgte perioder. Eventuelle gebyrer vises ikke i denne prototype.</p>
+            <p class="muted-text">Samlet lejepris for de valgte perioder.</p>
             @if (canCheckout)
             {
                 <form asp-controller="Cart" asp-action="Checkout" method="post">

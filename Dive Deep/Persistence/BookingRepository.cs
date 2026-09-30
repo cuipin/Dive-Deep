@@ -150,6 +150,7 @@ public class BookingRepository : IBookingRepository
         int bookingId,
         int bookingItemId,
         string? userId,
+        byte[] expectedRowVersion,
         bool isAdmin,
         BookingLineRequest line,
         CancellationToken cancellationToken = default)
@@ -245,6 +246,14 @@ public class BookingRepository : IBookingRepository
                 EquipmentUnitId = unitId
             });
         }
+        if (expectedRowVersion.Length == 0 ||
+            !booking.RowVersion.SequenceEqual(expectedRowVersion))
+        {
+            return BookingReservationOutcome.ConcurrencyConflict;
+        }
+        _DiveDeepContext.Entry(booking)
+            .Property(booking => booking.RowVersion)
+            .OriginalValue = expectedRowVersion;
 
         try
         {
@@ -261,6 +270,12 @@ public class BookingRepository : IBookingRepository
         {
             await transaction.RollbackAsync(cancellationToken);
             return BookingReservationOutcome.Unavailable;
+        }
+
+        if (expectedRowVersion.Length == 0 ||
+            !booking.RowVersion.SequenceEqual(expectedRowVersion))
+        {
+            return BookingReservationOutcome.ConcurrencyConflict;
         }
     }
 

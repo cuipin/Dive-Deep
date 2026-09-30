@@ -179,8 +179,10 @@ public sealed class OpenMeteoDiveConditionsService(HttpClient httpClient) : IDiv
     {
         public string Name { get; init; } = string.Empty;
         public string? Admin1 { get; init; }
+
         [JsonPropertyName("country_code")]
         public string CountryCode { get; init; } = string.Empty;
+
         public double Latitude { get; init; }
         public double Longitude { get; init; }
     }
@@ -193,9 +195,12 @@ public sealed class OpenMeteoDiveConditionsService(HttpClient httpClient) : IDiv
     private sealed class ForecastCurrent
     {
         public string Time { get; init; } = string.Empty;
+
         [JsonPropertyName("wind_speed_10m")]
         public double? WindSpeed { get; init; }
+
         public double? Precipitation { get; init; }
+
         [JsonPropertyName("weather_code")]
         public int? WeatherCode { get; init; }
     }
@@ -209,6 +214,7 @@ public sealed class OpenMeteoDiveConditionsService(HttpClient httpClient) : IDiv
     {
         [JsonPropertyName("wave_height")]
         public double? WaveHeight { get; init; }
+
         [JsonPropertyName("sea_surface_temperature")]
         public double? SeaSurfaceTemperature { get; init; }
     }

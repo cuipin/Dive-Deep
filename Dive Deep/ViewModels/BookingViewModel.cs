@@ -28,6 +28,7 @@ public class BookingFormInput
     [Range(1, 100, ErrorMessage = "Antallet skal være mellem 1 og 100.")]
     [Display(Name = "Antal")]
     public int Quantity { get; set; } = 1;
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     [Required]
     [Display(Name = "Startdato og -tid")]

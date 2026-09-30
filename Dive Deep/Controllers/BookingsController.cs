@@ -139,6 +139,7 @@ public class BookingsController : Controller
                 BookingItemId = item.BookingItemId,
                 ProductId = item.ProductVariantId,
                 Quantity = item.Quantity,
+                RowVersion = booking.RowVersion,
                 StartTime = DanishDateTime.ToLocal(item.StartTime),
                 EndTime = DanishDateTime.ToLocal(item.EndTime)
             },
@@ -175,6 +176,7 @@ public class BookingsController : Controller
             model.Booking.BookingId,
             model.Booking.BookingItemId,
             _userManager.GetUserId(User)!,
+            model.Booking.RowVersion,
             User.IsInRole("Admin"),
             new BookingLineRequest(model.Booking.ProductId, model.Booking.Quantity, start, end),
             cancellationToken);
@@ -263,6 +265,7 @@ public class BookingsController : Controller
         {
             "StartInPast" => "Booking.StartTime",
             "InvalidRange" => "Booking.EndTime",
+            "ConcurrencyConflict" => string.Empty,
             _ => "Booking.ProductId"
         };
 

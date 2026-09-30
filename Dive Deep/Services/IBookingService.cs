@@ -20,6 +20,7 @@ public interface IBookingService
         int bookingId,
         int bookingItemId,
         string? userId,
+        byte[] expectedRowVersion,
         bool isAdmin,
         BookingLineRequest line,
         CancellationToken cancellationToken = default);
