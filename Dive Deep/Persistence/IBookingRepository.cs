@@ -9,6 +9,12 @@ public interface IBookingRepository
 
     Task<IReadOnlyList<Booking>> GetForUserAsync(string userId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Booking>> GetForUserBookingsAsync(
+        string userId,
+        bool history,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
     Task<Booking?> GetForUserAsync(int bookingId, string? userId, CancellationToken cancellationToken = default);
 
     Task<BookingReservationOutcome> CreateWithAllocationsAsync(Booking booking, CancellationToken cancellationToken = default);

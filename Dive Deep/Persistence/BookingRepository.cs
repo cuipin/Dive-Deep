@@ -44,6 +44,32 @@ public class BookingRepository : IBookingRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Booking>> GetForUserBookingsAsync(
+        string userId,
+        bool history,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        var bookings = _DiveDeepContext.Bookings
+            .AsNoTracking()
+            .Where(booking => booking.UserId == userId);
+
+        bookings = history
+            ? bookings.Where(booking => booking.Status != BookingStatus.Confirmed
+                || !booking.Items.Any(item => item.EndTime > now))
+            : bookings.Where(booking => booking.Status == BookingStatus.Confirmed
+                && booking.Items.Any(item => item.EndTime > now));
+
+        return await bookings
+            .Include(booking => booking.User)
+            .Include(booking => booking.Items)
+                .ThenInclude(item => item.ProductVariant)
+                    .ThenInclude(variant => variant.Product)
+                        .ThenInclude(product => product.Category)
+            .OrderByDescending(booking => booking.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<Booking?> GetForUserAsync(
         int bookingId,
         string? userId,

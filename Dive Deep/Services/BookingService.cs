@@ -18,6 +18,13 @@ public class BookingService : IBookingService
         CancellationToken cancellationToken = default) =>
         _bookings.GetForUserAsync(userId, cancellationToken);
 
+    public Task<IReadOnlyList<Booking>> GetForUserBookingsAsync(
+        string userId,
+        bool history,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default) =>
+        _bookings.GetForUserBookingsAsync(userId, history, now, cancellationToken);
+
     public Task<Booking?> GetForUserAsync(
         int bookingId,
         string? userId,

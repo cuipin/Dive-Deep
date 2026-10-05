@@ -26,7 +26,7 @@ public class BookingsController : Controller
         _userManager = userManager;
     }
 
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(bool history, CancellationToken cancellationToken)
     {
         var isAdmin = User.IsInRole("Admin");
         var userId = _userManager.GetUserId(User)!;
@@ -39,7 +39,11 @@ public class BookingsController : Controller
         }
         else
         {
-            bookings = await _bookings.GetForUserAsync(userId, cancellationToken);
+            bookings = await _bookings.GetForUserBookingsAsync(
+                userId,
+                history,
+                DateTimeOffset.UtcNow,
+                cancellationToken);
         }
 
         foreach (var booking in bookings)
@@ -52,6 +56,7 @@ public class BookingsController : Controller
         }
 
         ViewBag.IsAdmin = isAdmin;
+        ViewBag.ShowHistory = !isAdmin && history;
         return View(bookings.ToList());
     }
 

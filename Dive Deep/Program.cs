@@ -71,6 +71,8 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+        // Serve files added to wwwroot while the app is running (uploaded product photos).
+        app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();

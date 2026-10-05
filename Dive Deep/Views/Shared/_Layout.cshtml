@@ -337,12 +337,12 @@
 
                     <!-- Right side icons and login -->
                     <div class="navbar-right">
-                        <a class="icon-btn" asp-controller="Cart" asp-action="Index" title="Indkøbskurv">🛒</a>
+                        <a class="icon-btn cart-link" asp-controller="Cart" asp-action="Index" title="Indkøbskurv" aria-label="Indkøbskurv">🛒</a>
 
                         <!-- Login Button -->
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            <span class="nav-link greeting">Hej, @UserManager.GetUserName(User)!</span>
+                            <a class="nav-link greeting" asp-controller="Account" asp-action="Index">Hej, @UserManager.GetUserName(User)!</a>
                             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" style="display:inline;">
                                 <button type="submit" class="btn-login" style="border:none;">
                                     Log ud

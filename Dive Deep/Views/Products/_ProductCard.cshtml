@@ -2,8 +2,13 @@
 @using System.Globalization
 @{
     var danishCulture = CultureInfo.GetCultureInfo("da-DK");
-    var variants = Model.Variants.OrderBy(variant => variant.OptionLabel).ToList();
+    var variants = Model.Variants
+        .Where(variant => variant.EquipmentUnits.Any(unit => unit.Status == Dive_Deep.Models.EquipmentUnitStatus.Active))
+        .OrderBy(variant => variant.OptionLabel)
+        .ToList();
     var lowestRate = variants.Count == 0 ? 0m : variants.Min(variant => variant.DailyRate);
+    var registeredStock = Model.Variants.SelectMany(variant => variant.EquipmentUnits)
+        .Count(unit => unit.Status == Dive_Deep.Models.EquipmentUnitStatus.Active);
     var imageName = Model.ImageFileName ?? "BCD.jpg";
 }
 
@@ -15,10 +20,11 @@
         <p class="product-category-label">@Model.Category.Name</p>
         <h2>@Model.Brand @Model.Model</h2>
         <p class="product-price">Fra @lowestRate.ToString("C0", danishCulture) <span>/ dag</span></p>
+        <p class="product-stock">Registreret lager: @registeredStock stk.</p>
 
         @if (variants.Count == 0)
         {
-            <p class="muted-text">Produktet har ingen aktive valgmuligheder endnu.</p>
+            <p class="muted-text">Der er ikke lagerført udstyr på produktet endnu.</p>
         }
         else
         {
