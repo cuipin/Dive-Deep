@@ -46,15 +46,17 @@
 
         <div class="filter-field">
             <label asp-for="Booking.StartTime"></label>
-            <input type="datetime-local" step="60" asp-for="Booking.StartTime" />
+            <input type="date" asp-for="Booking.StartTime"
+                   value="@Model.Booking.StartTime.ToString("yyyy-MM-dd")" />
             <span asp-validation-for="Booking.StartTime" class="validation-message"></span>
         </div>
 
         <div class="filter-field">
             <label asp-for="Booking.EndTime"></label>
-            <input type="datetime-local" step="60" asp-for="Booking.EndTime" />
+            <input type="date" asp-for="Booking.EndTime"
+                   value="@Model.Booking.EndTime.ToString("yyyy-MM-dd")" />
             <span asp-validation-for="Booking.EndTime" class="validation-message"></span>
-        </div>
+        </div>  
 
         <div class="booking-edit-actions">
             <button type="submit" class="button button-primary">@(isEdit ? "Gem ændringer" : "Bekræft booking")</button>

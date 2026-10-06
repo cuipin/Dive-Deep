@@ -4,7 +4,7 @@
 @{
     ViewData["Title"] = "Min kurv";
     var danishCulture = CultureInfo.GetCultureInfo("da-DK");
-    var minimumStart = DanishDateTime.ToLocal(DateTimeOffset.UtcNow).ToString("yyyy-MM-ddTHH:mm");
+    var minimumStart = DanishDateTime.ToLocal(DateTimeOffset.UtcNow).ToString("yyyy-MM-dd");
     var total = 0m;
     var canCheckout = Model.Items.Count > 0 && Model.Items.All(item => item.StartTime.HasValue && item.EndTime.HasValue);
 }
@@ -43,14 +43,14 @@ else
                     ? DanishDateTime.ToLocal(item.EndTime!.Value) - DanishDateTime.ToLocal(item.StartTime!.Value)
                     : TimeSpan.Zero;
                 var days = hasPeriod
-                    ? Math.Max(1, (int)Math.Ceiling(localDuration.TotalDays))
+                    ? (int)localDuration.TotalDays + 1
                     : 0;
                 var lineTotal = hasPeriod
                     ? item.ProductVariant.DailyRate * item.Quantity * days
                     : 0m;
                 total += lineTotal;
-                var localStart = hasPeriod ? DanishDateTime.ToLocal(item.StartTime!.Value).ToString("yyyy-MM-ddTHH:mm") : "";
-                var localEnd = hasPeriod ? DanishDateTime.ToLocal(item.EndTime!.Value).ToString("yyyy-MM-ddTHH:mm") : "";
+                var localStart = hasPeriod ? DanishDateTime.ToLocal(item.StartTime!.Value).ToString("yyyy-MM-dd") : "";
+                var localEnd = hasPeriod ? DanishDateTime.ToLocal(item.EndTime!.Value).ToString("yyyy-MM-dd") : "";
                 var imageName = item.ProductVariant.Product.ImageFileName ?? "BCD.jpg";
 
                 <article class="cart-item-card">
@@ -65,13 +65,13 @@ else
                         <form asp-controller="Cart" asp-action="UpdateRentalPeriod" method="post" class="rental-period-form">
                             <input type="hidden" name="id" value="@item.CartItemId" />
                             <div class="filter-field">
-                                <label for="start-@item.CartItemId">Startdato og -tid</label>
-                                <input id="start-@item.CartItemId" name="startTime" type="datetime-local"
+                                <label for="start-@item.CartItemId">Startdato</label>
+                                <input id="start-@item.CartItemId" name="startTime" type="date"
                                        value="@localStart" min="@minimumStart" required />
                             </div>
                             <div class="filter-field">
-                                <label for="end-@item.CartItemId">Slutdato og -tid</label>
-                                <input id="end-@item.CartItemId" name="endTime" type="datetime-local"
+                                <label for="end-@item.CartItemId">Slutdato</label>
+                                <input id="end-@item.CartItemId" name="endTime" type="date"
                                        value="@localEnd" min="@minimumStart" required />
                             </div>
                             <button class="button button-secondary" type="submit">Gem periode</button>

@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Dive_Deep</RootNamespace>
+    <UserSecretsId>409f0445-b143-4507-b1ca-05de64339bf0</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
