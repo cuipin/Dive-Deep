@@ -2,6 +2,7 @@ using Dive_Deep.Data;
 using Dive_Deep.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using System.Data;
 
 namespace Dive_Deep.Persistence;
@@ -30,6 +31,53 @@ public class ProductRepository : IProductRepository
             _DiveDeepContext.ChangeTracker.Clear();
             return null;
         }
+    }
+
+    public async Task<Product?> GetProductByIdAsync(
+        int productId,
+        CancellationToken cancellationToken = default) =>
+        await _DiveDeepContext.Products
+            .AsNoTracking()
+            .Include(product => product.Category)
+            .Include(product => product.Variants.Where(variant => variant.IsActive))
+                .ThenInclude(variant => variant.EquipmentUnits.Where(unit => unit.Status == EquipmentUnitStatus.Active))
+            .SingleOrDefaultAsync(product => product.ProductId == productId, cancellationToken);
+
+    public async Task<bool> UpdateProductAsync(
+        Product product,
+        CancellationToken cancellationToken = default)
+    {
+        _DiveDeepContext.Products.Update(product);
+        try
+        {
+            await _DiveDeepContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException exception) when (
+            exception.GetBaseException() is SqlException sqlException
+            && sqlException.Number is 2601 or 2627)
+        {
+            // The unique indexes remain the final protection against two simultaneous admin submissions.
+            _DiveDeepContext.ChangeTracker.Clear();
+            return false;
+        }
+    }
+
+    public async Task DeleteProductAsync(int productId, CancellationToken cancellationToken = default)
+    {
+        var product = await _DiveDeepContext.Products
+            .Include(candidate => candidate.Variants)
+                .ThenInclude(variant => variant.EquipmentUnits)
+            .SingleOrDefaultAsync(candidate => candidate.ProductId == productId, cancellationToken);
+        if (product is null)
+        {
+            return;
+        }
+        _DiveDeepContext.EquipmentUnits.RemoveRange(
+            product.Variants.SelectMany(variant => variant.EquipmentUnits));
+        _DiveDeepContext.ProductVariants.RemoveRange(product.Variants);
+        _DiveDeepContext.Products.Remove(product);
+        await _DiveDeepContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Product>> SearchProductsAsync(
@@ -146,6 +194,17 @@ public class ProductRepository : IProductRepository
 
     public async Task<IReadOnlyList<Product>> GetManageableProductsAsync(
         CancellationToken cancellationToken = default) =>
+        await _DiveDeepContext.Products
+            .AsNoTracking()
+            .Include(product => product.Category)
+            .Include(product => product.Variants)
+                .ThenInclude(variant => variant.EquipmentUnits)
+            .OrderBy(product => product.Category.Name)
+            .ThenBy(product => product.Brand)
+            .ThenBy(product => product.Model)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Product>> GetAllProductsAsync(CancellationToken cancellationToken = default) =>
         await _DiveDeepContext.Products
             .AsNoTracking()
             .Include(product => product.Category)

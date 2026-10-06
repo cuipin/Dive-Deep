@@ -25,6 +25,14 @@ public class Program
                 .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<Dive_DeepContext>();
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("MobileClient", policy =>
+                policy.WithOrigins("https://localhost:7240")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod());
+        });
+
         builder.Services.AddScoped<IBookingRepository, BookingRepository>();
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
         builder.Services.AddScoped<ICartRepository, CartRepository>();
@@ -74,6 +82,7 @@ public class Program
         // Serve files added to wwwroot while the app is running (uploaded product photos).
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors("MobileClient");
         app.UseAuthentication();
         app.UseAuthorization();
 

@@ -72,7 +72,7 @@ public sealed class AdminProductVariantInputViewModel
     [Display(Name = "Octopus")]
     public string? Octopus { get; set; }
 
-    [Range(typeof(decimal), "0.01", "50000", ErrorMessage = "Dagsprisen skal være større end 0 kr.")]
+    [Range(typeof(decimal), "0.01", "50000", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true, ErrorMessage = "Dagsprisen skal være større end 0 kr.")]
     [Display(Name = "Dagspris")]
     public decimal DailyRate { get; set; }
 

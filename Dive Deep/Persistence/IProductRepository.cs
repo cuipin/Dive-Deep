@@ -25,9 +25,12 @@ public interface IProductRepository
 
     Task<IReadOnlyList<Product>> GetManageableProductsAsync(CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Product>> GetAllProductsAsync(CancellationToken cancellationToken = default);
+
     Task<bool> CategoryExistsAsync(int categoryId, CancellationToken cancellationToken = default);
 
     Task<bool> CategoryNameExistsAsync(string categoryName, CancellationToken cancellationToken = default);
+    Task<bool> UpdateProductAsync(Product product, CancellationToken cancellationToken = default);
 
     Task<bool> ProductExistsAsync(
         int? categoryId,
@@ -37,6 +40,12 @@ public interface IProductRepository
         CancellationToken cancellationToken = default);
 
     Task<Product?> AddProductAsAdminAsync(Product product, CancellationToken cancellationToken = default);
+    //AddProductAsync
+
+    Task<Product?> GetProductByIdAsync(int productId, CancellationToken cancellationToken = default);
+
+    //DeleteProductAsync
+    Task DeleteProductAsync(int productId, CancellationToken cancellationToken = default);
 
     Task<ProductDeletionOutcome> DeleteProductAsAdminAsync(
         int productId,
