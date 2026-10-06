@@ -14,7 +14,7 @@
     <p class="eyebrow">@(isAdmin ? "ADMINISTRATION" : "DIN KONTO")</p>
     <h1>@(isAdmin ? "Alle kunders bookinger" : showHistory ? "Ordrehistorik" : "Kommende og aktuelle bookinger")</h1>
     <p>@(isAdmin
-        ? "Denne oversigt indeholder alle bookinger, der er oprettet siden systemets start, også afsluttede og annullerede bookinger."
+        ? "Alle bookinger."
         : showHistory
             ? "Her kan du se dine afsluttede og annullerede bookinger. Bookingerne gemmes i historikken."
             : "Her vises dine bekræftede bookinger med en lejeperiode, der endnu ikke er afsluttet. Afsluttede og annullerede bookinger findes i ordrehistorikken.")</p>
