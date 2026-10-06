@@ -76,7 +76,7 @@ else
                         }
                         else
                         {
-                            <h2>Oprettet @DanishDateTime.ToLocal(booking.CreatedAtUtc).ToString("dd-MM-yyyy HH:mm")</h2>
+                            <h2>Oprettet @DanishDateTime.ToLocal(booking.CreatedAtUtc).ToString("dd-MM-yyyy")</h2>
                         }
                     </div>
                     <span class="booking-status status-@displayStatus.ToString().ToLowerInvariant()">@statusLabel</span>
@@ -98,9 +98,9 @@ else
                             </div>
                             <div class="booking-period">
                                 <span>Fra</span>
-                                <strong>@start.ToString("dd-MM-yyyy HH:mm")</strong>
+                                <strong>@start.ToString("dd-MM-yyyy")</strong>
                                 <span>Til</span>
-                                <strong>@end.ToString("dd-MM-yyyy HH:mm")</strong>
+                                <strong>@end.ToString("dd-MM-yyyy")</strong>
                             </div>
                             <div class="booking-line-price">
                                 <span>@rentalDays @(rentalDays == 1 ? "dag" : "dage") · @item.DailyRateAtBooking.ToString("C0", culture)/dag</span>
@@ -121,8 +121,8 @@ else
                 </div>
 
                 <footer class="booking-card-footer" style="color:black">
-                        <span>Booking oprettet @DanishDateTime.ToLocal(booking.CreatedAtUtc).ToString("dd-MM-yyyy HH:mm")</span>
-                    @if (booking.Status == BookingStatus.Confirmed && !rentalPeriodEnded)
+                        <span>Booking oprettet @DanishDateTime.ToLocal(booking.CreatedAtUtc).ToString("dd-MM-yyyy")</span>
+                    @if (booking.Status == BookingStatus.Confirmed)
                     {
                         <form asp-controller="Bookings" asp-action="Delete" asp-route-id="@booking.BookingId" method="post">
                             <button type="submit" class="remove-link"
