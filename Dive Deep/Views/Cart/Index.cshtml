@@ -1,7 +1,117 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+@model Dive_Deep.Models.Cart
+@using System.Globalization
+@using Dive_Deep.Services
 @{
+    ViewData["Title"] = "Min kurv";
+    var danishCulture = CultureInfo.GetCultureInfo("da-DK");
+    var minimumStart = DanishDateTime.ToLocal(DateTimeOffset.UtcNow).ToString("yyyy-MM-dd");
+    var total = 0m;
+    var canCheckout = Model.Items.Count > 0 && Model.Items.All(item => item.StartTime.HasValue && item.EndTime.HasValue);
 }
 
+<section class="cart-heading">
+    <p class="eyebrow">DIN LEJE</p>
+    <h1>Indkøbskurv</h1>
+    <p>Vælg periode for hvert produkt. Prisen beregnes ud fra antal hele lejedage.</p>
+</section>
 
+@if (TempData["CartSuccess"] is string successMessage)
+{
+    <div class="notice notice-success" role="status">@successMessage</div>
+}
+@if (TempData["CartError"] is string errorMessage)
+{
+    <div class="notice notice-error" role="alert">@errorMessage</div>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <div class="empty-state">
+        <h2>Din kurv er tom</h2>
+        <p>Find udstyr i kataloget, og læg det i kurven for at begynde.</p>
+        <a class="button button-primary" asp-controller="Products" asp-action="Index">Se produkter</a>
+    </div>
+}
+else
+{
+    <div class="cart-layout">
+        <div class="cart-items">
+            @foreach (var item in Model.Items.OrderBy(item => item.CartItemId))
+            {
+                var hasPeriod = item.StartTime.HasValue && item.EndTime.HasValue;
+                var localDuration = hasPeriod
+                    ? DanishDateTime.ToLocal(item.EndTime!.Value) - DanishDateTime.ToLocal(item.StartTime!.Value)
+                    : TimeSpan.Zero;
+                var days = hasPeriod
+                    ? (int)localDuration.TotalDays + 1
+                    : 0;
+                var lineTotal = hasPeriod
+                    ? item.ProductVariant.DailyRate * item.Quantity * days
+                    : 0m;
+                total += lineTotal;
+                var localStart = hasPeriod ? DanishDateTime.ToLocal(item.StartTime!.Value).ToString("yyyy-MM-dd") : "";
+                var localEnd = hasPeriod ? DanishDateTime.ToLocal(item.EndTime!.Value).ToString("yyyy-MM-dd") : "";
+                var imageName = item.ProductVariant.Product.ImageFileName ?? "BCD.jpg";
+
+                <article class="cart-item-card">
+                    <img class="cart-item-image" src="@Url.Content("~/lib/Images/" + imageName)"
+                         alt="@item.ProductVariant.Product.Brand @item.ProductVariant.Product.Model" />
+                    <div class="cart-item-main">
+                        <p class="product-category-label">@item.ProductVariant.Product.Category.Name</p>
+                        <h2>@item.ProductVariant.Product.Brand @item.ProductVariant.Product.Model</h2>
+                        <p class="muted-text">@item.ProductVariant.OptionLabel</p>
+                        <p class="cart-daily-rate">@item.ProductVariant.DailyRate.ToString("C0", danishCulture) pr. dag · @item.Quantity stk.</p>
+
+                        <form asp-controller="Cart" asp-action="UpdateRentalPeriod" method="post" class="rental-period-form">
+                            <input type="hidden" name="id" value="@item.CartItemId" />
+                            <div class="filter-field">
+                                <label for="start-@item.CartItemId">Startdato</label>
+                                <input id="start-@item.CartItemId" name="startTime" type="date"
+                                       value="@localStart" min="@minimumStart" required />
+                            </div>
+                            <div class="filter-field">
+                                <label for="end-@item.CartItemId">Slutdato</label>
+                                <input id="end-@item.CartItemId" name="endTime" type="date"
+                                       value="@localEnd" min="@minimumStart" required />
+                            </div>
+                            <button class="button button-secondary" type="submit">Gem periode</button>
+                        </form>
+                    </div>
+                    <div class="cart-item-total">
+                        @if (hasPeriod)
+                        {
+                            <span>@days @(days == 1 ? "dag" : "dage")</span>
+                            <strong>@lineTotal.ToString("C0", danishCulture)</strong>
+                        }
+                        else
+                        {
+                            <span>Vælg periode</span>
+                        }
+                        <form asp-controller="Cart" asp-action="Remove" method="post">
+                            <input type="hidden" name="id" value="@item.CartItemId" />
+                            <button class="remove-link" type="submit">Fjern</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+
+        <aside class="cart-summary">
+            <p class="eyebrow">OVERSIGT</p>
+            <h2>Leje i alt</h2>
+            <p class="cart-total">@total.ToString("C0", danishCulture)</p>
+            <p class="muted-text">Samlet lejepris for de valgte perioder.</p>
+            @if (canCheckout)
+            {
+                <form asp-controller="Cart" asp-action="Checkout" method="post">
+                    <button class="button button-primary checkout-button" type="submit">Bekræft leje</button>
+                </form>
+            }
+            else
+            {
+                <button class="button button-primary checkout-button" type="button" disabled>Vælg alle perioder først</button>
+            }
+            <a class="text-link summary-back-link" asp-controller="Products" asp-action="Index">Fortsæt med at vælge udstyr</a>
+        </aside>
+    </div>
+}

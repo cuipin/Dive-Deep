@@ -1,0 +1,49 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Opret bruger";
+}
+
+<section class="auth-page">
+    <div class="auth-card auth-card-wide">
+        <img class="auth-logo" src="~/lib/Images/Profile.png" alt="" />
+        <p class="eyebrow">BLIV EN DEL AF DIVE DEEP</p>
+        <h1>Opret din konto</h1>
+        <p class="auth-intro">Med en konto kan du gemme din kurv og se dine egne bookinger.</p>
+
+        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="validation-message" role="alert"></div>
+
+            <div class="filter-field">
+                <label asp-for="Input.Username">Brugernavn</label>
+                <input asp-for="Input.Username" autocomplete="username" aria-required="true" />
+                <span asp-validation-for="Input.Username" class="validation-message"></span>
+            </div>
+            <div class="filter-field">
+                <label asp-for="Input.Email">E-mail</label>
+                <input asp-for="Input.Email" autocomplete="email" aria-required="true" />
+                <span asp-validation-for="Input.Email" class="validation-message"></span>
+            </div>
+            <div class="filter-field">
+                <label asp-for="Input.Password">Adgangskode</label>
+                <input asp-for="Input.Password" autocomplete="new-password" aria-required="true" />
+                <span asp-validation-for="Input.Password" class="validation-message"></span>
+                <small>Adgangskoden skal være mindst 6 tegn.</small>
+            </div>
+            <div class="filter-field">
+                <label asp-for="Input.ConfirmPassword">Gentag adgangskode</label>
+                <input asp-for="Input.ConfirmPassword" autocomplete="new-password" aria-required="true" />
+                <span asp-validation-for="Input.ConfirmPassword" class="validation-message"></span>
+            </div>
+            <button id="registerSubmit" type="submit" class="button button-primary auth-submit">Opret konto</button>
+        </form>
+
+        <div class="auth-links">
+            <span>Har du allerede en konto? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Log ind</a></span>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,43 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Log ind";
+}
+
+<section class="auth-page">
+    <div class="auth-card">
+        <img class="auth-logo" src="~/lib/Images/Profile.png" alt="" />
+        <p class="eyebrow">VELKOMMEN TILBAGE</p>
+        <h1>Log ind</h1>
+
+        <form id="account" method="post" class="auth-form">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="validation-message" role="alert"></div>
+
+            <div class="filter-field">
+                <label asp-for="Input.UserNameOrEmail">Brugernavn eller e-mail</label>
+                <input asp-for="Input.UserNameOrEmail" autocomplete="username" aria-required="true" autofocus />
+                <span asp-validation-for="Input.UserNameOrEmail" class="validation-message"></span>
+            </div>
+            <div class="filter-field">
+                <label asp-for="Input.Password">Adgangskode</label>
+                <input asp-for="Input.Password" autocomplete="current-password" aria-required="true" />
+                <span asp-validation-for="Input.Password" class="validation-message"></span>
+            </div>
+            <label class="remember-option">
+                <input asp-for="Input.RememberMe" />
+                <span>Husk mig på denne enhed</span>
+            </label>
+            <button id="login-submit" type="submit" class="button button-primary auth-submit">Log ind</button>
+        </form>
+
+        <div class="auth-links">
+            <a asp-page="./ForgotPassword">Glemt adgangskode?</a>
+            <span>Har du ikke en konto? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Opret dig her</a></span>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
