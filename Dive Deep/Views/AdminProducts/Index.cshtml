@@ -1,0 +1,66 @@
+@model IReadOnlyList<Dive_Deep.Models.Product>
+@using System.Globalization
+@{
+    ViewData["Title"] = "Produktadministration";
+    var danishCulture = CultureInfo.GetCultureInfo("da-DK");
+}
+
+<section class="admin-products-page">
+    <header class="admin-page-heading">
+        <div>
+            <p class="eyebrow">Administration</p>
+            <h1>Produktkatalog</h1>
+        </div>
+        <a class="button button-primary" asp-action="Create">Opret produkt</a>
+    </header>
+
+    @if (TempData["StatusMessage"] is string statusMessage)
+    {
+        <div class="alert alert-success" role="status">@statusMessage</div>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <div class="admin-empty-state">
+            <h2>Der er endnu ingen produkter</h2>
+            <p>Opret det første produkt for at gøre det synligt i kataloget.</p>
+            <a class="button button-primary" asp-action="Create">Opret første produkt</a>
+        </div>
+    }
+    else
+    {
+        <div class="admin-product-list">
+            @foreach (var product in Model)
+            {
+                var activeUnits = product.Variants.SelectMany(variant => variant.EquipmentUnits)
+                    .Count(unit => unit.Status == Dive_Deep.Models.EquipmentUnitStatus.Active);
+                <article class="admin-product-card">
+                    <img src="@Url.Content("~/lib/Images/" + (product.ImageFileName ?? "BCD.jpg"))"
+                         alt="@product.Brand @product.Model" loading="lazy" />
+                    <div class="admin-product-main">
+                        <p class="product-category-label">@product.Category.Name</p>
+                        <h2>@product.Brand @product.Model</h2>
+                        <p>@product.Variants.Count variant(er) · @activeUnits fysisk(e) enhed(er) i aktivt lager</p>
+                        <ul class="admin-variant-list">
+                            @foreach (var variant in product.Variants.OrderBy(variant => variant.OptionLabel))
+                            {
+                                var variantStock = variant.EquipmentUnits.Count(unit => unit.Status == Dive_Deep.Models.EquipmentUnitStatus.Active);
+                                <li>@variant.OptionLabel — @variant.DailyRate.ToString("C2", danishCulture)/dag — @variantStock stk.</li>
+                            }
+                        </ul>
+                    </div>
+                    <span class="admin-product-status @(product.IsActive ? "is-active" : "is-inactive")">
+                        @(product.IsActive ? "Synlig" : "Arkiveret / skjult")
+                    </span>
+                    @if (product.IsActive)
+                    {
+                        <form class="admin-product-delete-form" asp-action="Delete" asp-route-id="@product.ProductId" method="post"
+                              onsubmit="return confirm('Fjern produktet fra kataloget? Hvis bookinger eller kurve henviser til produktet, arkiveres det, så historikken bevares. Ellers slettes produkt og lagerenheder.');">
+                            <button type="submit" class="remove-link admin-product-delete">Slet produkt</button>
+                        </form>
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>

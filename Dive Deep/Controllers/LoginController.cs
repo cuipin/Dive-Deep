@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Dive_Deep.Controllers
 {
@@ -6,7 +6,7 @@ namespace Dive_Deep.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+            return RedirectToPage("/Account/Login", new { area = "Identity" });
         }
     }
 }

@@ -1,0 +1,18 @@
+@model Dive_Deep.ViewModels.PackageVariantSelectViewModel
+@using System.Globalization
+@{
+    var danishCulture = CultureInfo.GetCultureInfo("da-DK");
+}
+
+<div class="filter-field">
+    <label for="@Model.Id">@Model.Label</label>
+    <select id="@Model.Id" name="productVariantIds" required>
+        <option value="" disabled selected>Vælg...</option>
+        @foreach (var variant in Model.Variants)
+        {
+            <option value="@variant.ProductVariantId">
+                @variant.Product.Brand @variant.Product.Model · @variant.OptionLabel · @variant.DailyRate.ToString("C0", danishCulture)/dag
+            </option>
+        }
+    </select>
+</div>

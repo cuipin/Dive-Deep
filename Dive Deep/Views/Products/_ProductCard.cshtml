@@ -1,0 +1,56 @@
+@model Dive_Deep.Models.Product
+@using System.Globalization
+@{
+    var danishCulture = CultureInfo.GetCultureInfo("da-DK");
+    var variants = Model.Variants
+        .Where(variant => variant.EquipmentUnits.Any(unit => unit.Status == Dive_Deep.Models.EquipmentUnitStatus.Active))
+        .OrderBy(variant => variant.OptionLabel)
+        .ToList();
+    var lowestRate = variants.Count == 0 ? 0m : variants.Min(variant => variant.DailyRate);
+    var registeredStock = Model.Variants.SelectMany(variant => variant.EquipmentUnits)
+        .Count(unit => unit.Status == Dive_Deep.Models.EquipmentUnitStatus.Active);
+    var imageName = Model.ImageFileName ?? "BCD.jpg";
+}
+
+<article class="product-card">
+    <a class="product-image-wrap" asp-controller="Products" asp-action="Category" asp-route-category="@Model.Category.Name">
+        <img src="@Url.Content("~/lib/Images/" + imageName)" alt="@Model.Brand @Model.Model" loading="lazy" />
+    </a>
+    <div class="product-card-body">
+        <p class="product-category-label">@Model.Category.Name</p>
+        <h2>@Model.Brand @Model.Model</h2>
+        <p class="product-price">Fra @lowestRate.ToString("C0", danishCulture) <span>/ dag</span></p>
+        <p class="product-stock">Registreret lager: @registeredStock stk.</p>
+
+        @if (variants.Count == 0)
+        {
+            <p class="muted-text">Der er ikke lagerført udstyr på produktet endnu.</p>
+        }
+        else
+        {
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+            <form asp-controller="Cart" asp-action="Add" method="post" class="add-to-cart-form">
+                <label for="variant-@Model.ProductId">Vælg variant</label>
+                <select id="variant-@Model.ProductId" name="productVariantId" required>
+                    @foreach (var variant in variants)
+                    {
+                        <option value="@variant.ProductVariantId">
+                            @variant.OptionLabel · @variant.DailyRate.ToString("C0", danishCulture)/dag
+                        </option>
+                    }
+                </select>
+                <div class="product-card-actions">
+                    <label class="quantity-label" for="quantity-@Model.ProductId">Antal</label>
+                    <input id="quantity-@Model.ProductId" name="quantity" type="number" min="1" value="1" required />
+                    <button class="button button-primary" type="submit">Læg i kurv</button>
+                </div>
+            </form>
+            }
+            else
+            {
+                <a class="button button-primary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@Context.Request.Path">Log ind for at leje</a>
+            }
+        }
+    </div>
+</article>
