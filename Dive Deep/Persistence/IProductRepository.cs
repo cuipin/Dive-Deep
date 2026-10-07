@@ -29,6 +29,8 @@ public interface IProductRepository
 
     Task<bool> CategoryExistsAsync(int categoryId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ProductVariant>> GetProductVariantsAsync(int productId, CancellationToken cancellationToken = default);
+
     Task<bool> CategoryNameExistsAsync(string categoryName, CancellationToken cancellationToken = default);
     Task<bool> UpdateProductAsync(Product product, CancellationToken cancellationToken = default);
 

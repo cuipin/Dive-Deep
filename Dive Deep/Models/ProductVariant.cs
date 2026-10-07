@@ -20,4 +20,5 @@ public class ProductVariant
     public ICollection<EquipmentUnit> EquipmentUnits { get; set; } = new List<EquipmentUnit>();
     public ICollection<BookingItem> BookingItems { get; set; } = new List<BookingItem>();
     public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+
 }

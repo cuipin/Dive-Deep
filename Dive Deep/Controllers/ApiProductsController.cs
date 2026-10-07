@@ -1,6 +1,7 @@
 ﻿using Dive_Deep.DTOs;
 using Dive_Deep.Models;
 using Dive_Deep.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dive_Deep.Controllers
@@ -61,14 +62,18 @@ namespace Dive_Deep.Controllers
         }
 
         // BODY: POST api/products
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public Task<IActionResult> CreateProduct([FromBody] ProductDto dto) => CreateAsync(dto);
 
         // FORM: POST api/products/form 
+        [Authorize(Roles = "Admin")]
         [HttpPost("form")]
         public Task<IActionResult> CreateProductFromForm([FromForm] ProductDto dto) => CreateAsync(dto);
 
         // PUT: api/products/5
+        // PUT: api/products/5
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateProduct([FromRoute] int id, [FromBody] ProductDto dto)
         {
@@ -96,11 +101,17 @@ namespace Dive_Deep.Controllers
             var product = dto.ToEntity();
             product.ProductId = id;
 
-            await _productRepository.UpdateProductAsync(product);
+            var updated = await _productRepository.UpdateProductAsync(product);
+            if (!updated)
+            {
+                return Conflict("Et produkt med samme mærke og model findes allerede i kategorien.");
+            }
+
             return NoContent();
         }
 
         // DELETE: api/products/5
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProduct([FromRoute] int id)
         {
@@ -109,14 +120,14 @@ namespace Dive_Deep.Controllers
                 return BadRequest();
             }
 
-            var existingProduct = await _productRepository.GetProductByIdAsync(id);
-            if (existingProduct == null)
-            {
-                return NotFound();
-            }
+            var outcome = await _productRepository.DeleteProductAsAdminAsync(id);
 
-            await _productRepository.DeleteProductAsync(id);
-            return Ok(existingProduct.ToDto());
+            return outcome.Status switch
+            {
+                ProductDeletionStatus.NotFound => NotFound(),
+                ProductDeletionStatus.Archived => Ok("Produktet er arkiveret, fordi det bruges i bookinger eller kurve."),
+                _ => NoContent()
+            };
         }
 
         private async Task<IActionResult> CreateAsync(ProductDto dto)
@@ -141,5 +152,22 @@ namespace Dive_Deep.Controllers
 
             return CreatedAtAction(nameof(GetProductById), new { id = created.ProductId }, created.ToDto());
         }
+
+        // GET: api/products/5/variants
+        [HttpGet("{productId:int}/variants")]
+        public async Task<IActionResult> GetProductVariants([FromRoute] int productId)
+        {
+            if (productId <= 0)
+            {
+                return BadRequest();
+            }
+            var variants = await _productRepository.GetProductVariantsAsync(productId);
+            if (variants == null || !variants.Any())
+            {
+                return NotFound();
+            }
+            return Ok(variants.Select(variant => variant.ToDto()));
+        }
+
     }
 }

@@ -2,7 +2,6 @@ using Dive_Deep.Data;
 using Dive_Deep.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using System.Data;
 
 namespace Dive_Deep.Persistence;
@@ -32,6 +31,15 @@ public class ProductRepository : IProductRepository
             return null;
         }
     }
+
+    public async Task<IReadOnlyList<ProductVariant>> GetProductVariantsAsync(
+        int productId,
+        CancellationToken cancellationToken = default) =>
+        await _DiveDeepContext.ProductVariants
+            .AsNoTracking()
+            .Where(variant => variant.ProductId == productId)
+            .Include(variant => variant.EquipmentUnits)
+            .ToListAsync(cancellationToken);    
 
     public async Task<Product?> GetProductByIdAsync(
         int productId,
