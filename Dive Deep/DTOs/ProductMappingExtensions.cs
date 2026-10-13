@@ -19,7 +19,7 @@ public static class ProductMappingExtensions
     public static Product ToEntity(this ProductDto dto) => new()
     {
         ProductId = dto.Id,
-        ProductCategoryId = dto.ProductCategoryId, 
+        ProductCategoryId = dto.ProductCategoryId,
         Brand = dto.Brand.Trim(),
         Model = dto.Model.Trim(),
         ImageFileName = dto.ImageFileName,
@@ -67,4 +67,10 @@ public static class ProductMappingExtensions
             IsAvailable = variant.IsActive && activeUnits > 0
         };
     }
+
+    public static ProductCategoryDto ToDto(this ProductCategory category) => new()
+    {
+        ProductCategoryId = category.ProductCategoryId,
+        Name = category.Name
+    };
 }

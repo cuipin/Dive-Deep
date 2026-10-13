@@ -1,6 +1,7 @@
 ﻿using Dive_Deep.DTOs;
 using Dive_Deep.Models;
 using Dive_Deep.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -62,18 +63,18 @@ namespace Dive_Deep.Controllers
         }
 
         // BODY: POST api/products
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPost]
         public Task<IActionResult> CreateProduct([FromBody] ProductDto dto) => CreateAsync(dto);
 
         // FORM: POST api/products/form 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPost("form")]
         public Task<IActionResult> CreateProductFromForm([FromForm] ProductDto dto) => CreateAsync(dto);
 
         // PUT: api/products/5
         // PUT: api/products/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateProduct([FromRoute] int id, [FromBody] ProductDto dto)
         {
@@ -111,7 +112,7 @@ namespace Dive_Deep.Controllers
         }
 
         // DELETE: api/products/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProduct([FromRoute] int id)
         {
