@@ -1,0 +1,57 @@
+@model Dive_Deep.ViewModels.AccountDashboardViewModel
+@{
+    ViewData["Title"] = "Min konto";
+}
+
+<section class="account-page">
+    <header class="account-page-heading">
+        <p class="eyebrow">Min konto</p>
+        <h1>Hej, @Model.UserName</h1>
+        <p class="account-email">@Model.Email</p>
+    </header>
+
+    <div class="account-option-grid">
+        <a class="account-option-card" asp-area="Identity" asp-page="/Account/Manage/Index">
+            <span class="account-option-label">Kontoindstillinger</span>
+            <strong>Se dine personlige oplysninger</strong>
+            <span>Åbn Identity-indstillingerne for din konto.</span>
+        </a>
+        <a class="account-option-card" asp-area="Identity" asp-page="/Account/Manage/Email">
+            <span class="account-option-label">E-mail</span>
+            <strong>Skift e-mailadresse</strong>
+            <span>Opdater den e-mailadresse, der er knyttet til login.</span>
+        </a>
+        <a class="account-option-card" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
+            <span class="account-option-label">Sikkerhed</span>
+            <strong>Skift adgangskode</strong>
+            <span>Vælg en ny adgangskode til din konto.</span>
+        </a>
+        <a class="account-option-card" asp-area="Identity" asp-page="/Account/Manage/PersonalData">
+            <span class="account-option-label">Personlige data</span>
+            <strong>Se eller hent dine data</strong>
+            <span>Gå til Identity-siden for dine personlige data.</span>
+        </a>
+        <a class="account-option-card" asp-area="Identity" asp-page="/Account/Manage/TwoFactorAuthentication">
+            <span class="account-option-label">Sikkerhed</span>
+            <strong>To-trinsbekræftelse</strong>
+            <span>Administrér ekstra loginbeskyttelse, hvis den er konfigureret.</span>
+        </a>
+        <a class="account-option-card" asp-controller="Bookings" asp-action="Index">
+            <span class="account-option-label">Lejehistorik</span>
+            <strong>Se bookinger</strong>
+            <span>Se dine bookinger og deres status.</span>
+        </a>
+    </div>
+
+    @if (Model.IsAdmin)
+    {
+        <section class="account-admin-panel">
+            <div>
+                <p class="eyebrow">Administration</p>
+                <h2>Administrér produktkataloget</h2>
+                <p>Opret produkter, kategorier, varianter, billeder og lagerbeholdning.</p>
+            </div>
+            <a class="button button-primary" asp-controller="AdminProducts" asp-action="Index">Åbn produktadministration</a>
+        </section>
+    }
+</section>

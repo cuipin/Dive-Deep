@@ -1,8 +1,101 @@
-﻿@{
+@model Dive_Deep.ViewModels.HomePageViewModel
+@{
+    ViewData["Title"] = "Hjem";
+    var categories = new (string Name, string Image, string Description)[]
+    {
+        ("BCD", "BCD.jpg", "Stabilitet og komfort under dykket."),
+        ("Dykkerdragter", "Dykkerdragt.webp", "Våddragter og tørdragter til danske forhold."),
+        ("Regulatorsæt", "Regulatorsæt.WEBP", "Pålidelig vejrtrækning under vandet."),
+        ("Tanke", "Tank.webp", "Flasker i flere størrelser."),
+        ("Finner", "Finner.jpg", "Find den pasform, der passer til dig."),
+        ("Maske/Snorkel", "Snorkel maske.webp", "Udstyr til snorkling og dykning.")
+    };
 }
 
-<div class="text-center">
-    <h1 style="color:black" class="display-4">Velkommen</h1>
+<section class="home-hero">
+    <div class="home-hero-copy">
+        <p class="eyebrow">DIT NÆSTE DYKKER-EVENTYR STARTER HER</p>
+        <h1>Oplev mere under overfladen</h1>
+        <p>Lej velholdt dykker- og snorkeludstyr til din næste tur. Vælg udstyr, variant og periode, og hold styr på hele din leje i kurven.</p>
+        <div class="hero-actions">
+            <a class="button button-light" asp-controller="Products" asp-action="Index">Se alt udstyr</a>
+            <a class="hero-text-link" asp-controller="Contact" asp-action="Index">Spørg os om udstyr <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="hero-facts">
+            <span>✓ Udstyr til nye og erfarne dykkere</span>
+            <span>✓ Lejepris pr. dag</span>
+        </div>
+    </div>
+    <div class="home-hero-art" aria-label="Dykkerudstyr fra Dive Deep">
+        <div class="hero-bubble bubble-one"></div>
+        <div class="hero-bubble bubble-two"></div>
+        <div class="hero-image-card">
+            <img src="~/lib/Images/BCD.jpg" alt="Scubapro BCD til dykning" />
+            <div class="hero-image-caption">
+                <span>KLAR TIL NÆSTE DYKK</span>
+                <strong>Find dit udstyr hos Dive Deep</strong>
+            </div>
+        </div>
+        <div class="hero-floating-tag">Dyk sikkert. Oplev mere.</div>
+    </div>
+</section>
 
-    <p>Lær om <a href="https://learn.microsoft.com/aspnet/core">opbygning af webapps med ASP.NET Core</a>.</p>
-</div>
+<section class="section-block">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">VÆLG DIN KATEGORI</p>
+            <h2>Udstyr til hele oplevelsen</h2>
+        </div>
+        <a class="text-link" asp-controller="Products" asp-action="Index">Se hele kataloget <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="category-card-grid">
+        @foreach (var category in categories)
+        {
+            <a class="home-category-card" asp-controller="Products" asp-action="Category" asp-route-category="@category.Name">
+                <div class="home-category-image"><img src="@Url.Content("~/lib/Images/" + category.Image)" alt="" loading="lazy" /></div>
+                <div class="home-category-copy">
+                    <h3>@category.Name</h3>
+                    <p>@category.Description</p>
+                    <span>Se kategori <span aria-hidden="true">→</span></span>
+                </div>
+            </a>
+        }
+    </div>
+</section>
+
+<section class="section-block featured-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">UDVALGT TIL DIG</p>
+            <h2>Gode valg til dit næste dyk</h2>
+            <p>Et udvalg af vores udstyr på tværs af kategorier.</p>
+        </div>
+        <a class="text-link" asp-controller="Products" asp-action="Index">Find mere udstyr <span aria-hidden="true">→</span></a>
+    </div>
+
+    @if (Model.FeaturedProducts.Count == 0)
+    {
+        <div class="empty-state compact-empty">
+            <h3>Kataloget er ikke fyldt endnu</h3>
+            <p>Kør katalogets seed-kommando, så vises produkter og billeder her.</p>
+        </div>
+    }
+    else
+    {
+        <div class="product-grid featured-grid">
+            @foreach (var product in Model.FeaturedProducts)
+            {
+                <partial name="~/Views/Products/_ProductCard.cshtml" model="product" />
+            }
+        </div>
+    }
+</section>
+
+<section class="home-bottom-cta">
+    <div>
+        <p class="eyebrow">KOM GODT AFSTED</p>
+        <h2>Er du klar til at udforske?</h2>
+        <p>Vælg dit udstyr, læg det i kurven, og vælg lejeperiode, før du bekræfter.</p>
+    </div>
+    <a class="button button-light" asp-controller="Products" asp-action="Index">Gå til produkter</a>
+</section>

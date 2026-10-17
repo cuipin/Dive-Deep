@@ -1,0 +1,134 @@
+@model DiveConditionsPageViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Dykkerforhold";
+}
+
+<section class="catalog-heading">
+    <p class="eyebrow">DIVE DEEP · VEJR OG HAV</p>
+    <h1>Dykkerforhold</h1>
+    <p>Se vind, bølger, nedbør og vandtemperatur for en lokation i Danmark.</p>
+</section>
+
+<section class="conditions-search-card" aria-labelledby="conditions-search-heading">
+    <div>
+        <p class="eyebrow">VÆLG DIT STED</p>
+        <h2 id="conditions-search-heading">Søg efter en lokation</h2>
+        <p class="muted-text">Søg på by eller postnummer, eller indtast breddegrad og længdegrad.</p>
+    </div>
+    <form asp-action="Index" method="post" class="conditions-search-form">
+        @Html.AntiForgeryToken()
+        <div class="conditions-search-input">
+            <label asp-for="Location">Lokation i Danmark</label>
+            <input asp-for="Location" placeholder="Fx Aarhus eller 55.67, 12.56" autocomplete="off" />
+            <span asp-validation-for="Location" class="validation-message"></span>
+        </div>
+        <button class="button button-primary" type="submit">Se forholdene</button>
+    </form>
+    
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="notice notice-error conditions-error" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.Report is not null)
+{
+    var report = Model.Report;
+    <section class="conditions-result" aria-labelledby="conditions-result-heading">
+        <div class="conditions-result-heading">
+            <div>
+                <p class="eyebrow">AKTUELT OVERBLIK</p>
+                <h2 id="conditions-result-heading">@report.ResolvedLocation</h2>
+                <p>Vurderet @report.ObservationTime.ToString("dd. MMMM yyyy · HH:mm", CultureInfo.GetCultureInfo("da-DK")) dansk tid</p>
+            </div>
+            <a class="button button-secondary" asp-action="Index">Ny søgning</a>
+        </div>
+
+        @if (report.IsThunderstorm)
+        {
+            <div class="conditions-thunder-alert" role="alert">
+                <div>
+                    <strong>Tordenvejr – dykning frarådes</strong>
+                    <p>Tordenvejr kan være livsfarligt. Al dykning er frarådet, så længe der er risiko for torden.</p>
+                </div>
+            </div>
+        }
+
+        <div class="conditions-metric-grid">
+            <article class="conditions-metric-card">
+                <p>Vindhastighed</p>
+                <strong>@report.WindSpeedMetersPerSecond.ToString("0.0", CultureInfo.GetCultureInfo("da-DK")) <span>m/s</span></strong>
+                <small>Grænse: under 8 m/s</small>
+            </article>
+            <article class="conditions-metric-card">
+                <p>Bølgehøjde</p>
+                <strong>@report.WaveHeightMeters.ToString("0.0", CultureInfo.GetCultureInfo("da-DK")) <span>m</span></strong>
+                <small>Grænse: under 1,5 m</small>
+            </article>
+            <article class="conditions-metric-card">
+                <p>Nedbør, seneste time</p>
+                <strong>@report.PrecipitationMillimeters.ToString("0.0", CultureInfo.GetCultureInfo("da-DK")) <span>mm/t</span></strong>
+                <small>Grænse: under 2 mm/t</small>
+            </article>
+            <article class="conditions-metric-card @(report.IsThunderstorm ? "metric-danger" : "")">
+                <p>Tordenvejr</p>
+                <strong>@(report.IsThunderstorm ? "Ja" : "Nej")</strong>
+                <small>@(report.IsThunderstorm ? "Dykning frarådes" : "Ingen torden registreret")</small>
+            </article>
+        </div>
+
+        <div class="conditions-advice-grid">
+            <article class="conditions-advice-card @(report.IsSuitableForDiving ? "advice-good" : "advice-caution")">
+                <p class="eyebrow">VURDERING</p>
+                <h3>@(report.IsSuitableForDiving ? "Forholdene ser gode ud" : "Forholdene er ikke ideelle")</h3>
+                @if (report.UnsuitableReasons.Count == 0 && !report.IsThunderstorm)
+                {
+                    <p>Vejrforholdene holder sig inden for de valgte tommelfingerregler.</p>
+                }
+                else
+                {
+                    <p>Vær opmærksom på følgende forhold:</p>
+                    <ul>
+                        @foreach (var reason in report.UnsuitableReasons)
+                        {
+                            <li>@reason</li>
+                        }
+                        @if (report.IsThunderstorm)
+                        {
+                            <li>Der er tordenvejr i området. Det kan være livsfarligt at dykke.</li>
+                        }
+                    </ul>
+                }
+            </article>
+            <article class="conditions-advice-card suit-advice-card">
+                <p class="eyebrow">ANBEFALET UD FRA VANDTEMPERATUREN</p>
+                <h3>@report.WetsuitRecommendation</h3>
+                <p>Havtemperatur ved overfladen: <strong>@report.WaterTemperatureCelsius.ToString("0.0", CultureInfo.GetCultureInfo("da-DK")) °C</strong></p>
+                <small>Anbefalingen følger temperaturintervallerne i vores vejledning.</small>
+            </article>
+        </div>
+
+        <p class="conditions-disclaimer">Data Fra:  <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>.</p>
+    </section>
+}
+else
+{
+    <section class="conditions-guide">
+        <div class="conditions-guide-heading">
+            <p class="eyebrow">SÅDAN VURDERES FORHOLDENE</p>
+            <h2>En enkel guide før du tager af sted</h2>
+        </div>
+        <div class="conditions-guide-grid">
+            <article><span>01</span><h3>Vind</h3><p> Vindhastighed &lt; 8 m/s → Forholdene er gode (stærk vind giver ofte dårligere forhold, både pga. bølger og strøm).</p></article>
+            <article><span>02</span><h3>Bølger</h3><p>Bølgehøjde &lt; 1,5 m → Forholdene er gode (siger noget om ro/uro på overfladen).</p></article>
+            <article><span>03</span><h3>Nedbør</h3><p>Nedbør &lt; 2mm/t →Forholdene er gode (meget regn kan forringe sigtbarheden pga. sediment i vandet).</p></article>
+            <article><span>04</span><h3>Torden</h3><p>Torden kan være livsfarligt. Al dykning frarådes ved tordenvejr.</p></article>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,153 @@
+@model Dive_Deep.ViewModels.AdminProductCreateViewModel
+@{
+    ViewData["Title"] = "Opret produkt";
+}
+
+<section class="admin-products-page">
+    <header class="admin-page-heading">
+        <div>
+            <p class="eyebrow">Administration</p>
+            <h1>Opret produkt</h1>
+        </div>
+        <a class="button button-secondary" asp-action="Index">Tilbage til produkter</a>
+    </header>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-product-form">
+        <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+
+        <section class="admin-form-section">
+            <h2>Produktoplysninger</h2>
+            <div class="admin-form-grid">
+                <div class="admin-form-field">
+                    <label asp-for="CategoryId"></label>
+                    <select asp-for="CategoryId" asp-items="Model.Categories" class="form-select">
+                        <option value="">Vælg en eksisterende kategori</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="field-validation-error"></span>
+                </div>
+                <div class="admin-form-field">
+                    <label asp-for="NewCategoryName"></label>
+                    <input asp-for="NewCategoryName" class="form-control" placeholder="Udfyld kun hvis kategorien er ny" />
+                    <span asp-validation-for="NewCategoryName" class="field-validation-error"></span>
+                </div>
+                <div class="admin-form-field">
+                    <label asp-for="Brand"></label>
+                    <input asp-for="Brand" class="form-control" autocomplete="organization" />
+                    <span asp-validation-for="Brand" class="field-validation-error"></span>
+                </div>
+                <div class="admin-form-field">
+                    <label asp-for="Model"></label>
+                    <input asp-for="Model" class="form-control" />
+                    <span asp-validation-for="Model" class="field-validation-error"></span>
+                </div>
+                <div class="admin-form-field admin-form-field-wide">
+                    <label asp-for="Image"></label>
+                    <input asp-for="Image" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" />
+                    <small>JPG, PNG eller WebP. Maksimum 5 MB. Billedet vises på produktkortet.</small>
+                    <span asp-validation-for="Image" class="field-validation-error"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-form-section">
+            <div class="admin-variant-heading">
+                <div>
+                    <h2>Varianter og lager</h2>
+                    <p>Opret for eksempel én variant pr. størrelse. Antallet opretter de fysiske enheder, som bookingsystemet kan reservere.</p>
+                </div>
+                <button class="button button-secondary" type="button" id="add-variant">Tilføj variant</button>
+            </div>
+            <span asp-validation-for="Variants" class="field-validation-error"></span>
+
+            <div id="variant-list" class="admin-variant-editor-list">
+                @for (var i = 0; i < Model.Variants.Count; i++)
+                {
+                    <fieldset class="admin-variant-editor">
+                        <legend>Variant @(i + 1)</legend>
+                        <div class="admin-form-grid">
+                            <div class="admin-form-field">
+                                <label asp-for="Variants[i].OptionLabel"></label>
+                                <input asp-for="Variants[i].OptionLabel" class="form-control" placeholder="For eksempel M eller 7 mm" />
+                                <span asp-validation-for="Variants[i].OptionLabel" class="field-validation-error"></span>
+                            </div>
+                            <div class="admin-form-field">
+                                <label asp-for="Variants[i].Size"></label>
+                                <input asp-for="Variants[i].Size" class="form-control" />
+                            </div>
+                            <div class="admin-form-field">
+                                <label asp-for="Variants[i].DailyRate"></label>
+                                <input asp-for="Variants[i].DailyRate" class="form-control" type="number" min="0.01" step="0.01" />
+                                <span asp-validation-for="Variants[i].DailyRate" class="field-validation-error"></span>
+                            </div>
+                            <div class="admin-form-field">
+                                <label asp-for="Variants[i].InitialUnitCount"></label>
+                                <input asp-for="Variants[i].InitialUnitCount" class="form-control" type="number" min="0" step="1" />
+                                <span asp-validation-for="Variants[i].InitialUnitCount" class="field-validation-error"></span>
+                            </div>
+                        </div>
+                        <details class="admin-variant-details">
+                            <summary>Flere produktoplysninger (valgfrit)</summary>
+                            <div class="admin-form-grid">
+                                <div class="admin-form-field"><label asp-for="Variants[i].Gender"></label><input asp-for="Variants[i].Gender" class="form-control" /></div>
+                                <div class="admin-form-field"><label asp-for="Variants[i].EquipmentType"></label><input asp-for="Variants[i].EquipmentType" class="form-control" /></div>
+                                <div class="admin-form-field"><label asp-for="Variants[i].ThicknessMm"></label><input asp-for="Variants[i].ThicknessMm" class="form-control" type="number" min="0" step="0.1" /></div>
+                                <div class="admin-form-field"><label asp-for="Variants[i].VolumeLiters"></label><input asp-for="Variants[i].VolumeLiters" class="form-control" type="number" min="0" step="0.1" /></div>
+                                <div class="admin-form-field"><label asp-for="Variants[i].FirstStage"></label><input asp-for="Variants[i].FirstStage" class="form-control" /></div>
+                                <div class="admin-form-field"><label asp-for="Variants[i].SecondStage"></label><input asp-for="Variants[i].SecondStage" class="form-control" /></div>
+                                <div class="admin-form-field"><label asp-for="Variants[i].Octopus"></label><input asp-for="Variants[i].Octopus" class="form-control" /></div>
+                            </div>
+                        </details>
+                    </fieldset>
+                }
+            </div>
+        </section>
+
+        <div class="admin-form-actions">
+            <a class="button button-secondary" asp-action="Index">Annuller</a>
+            <button class="button button-primary" type="submit">Opret produkt</button>
+        </div>
+    </form>
+</section>
+
+<template id="variant-template">
+    <fieldset class="admin-variant-editor">
+        <legend>Variant __number__</legend>
+        <div class="admin-form-grid">
+            <div class="admin-form-field"><label for="Variants___index__OptionLabel">Variant</label><input id="Variants___index__OptionLabel" name="Variants[__index__].OptionLabel" class="form-control" maxlength="160" required placeholder="For eksempel M eller 7 mm" /></div>
+            <div class="admin-form-field"><label for="Variants___index__Size">Størrelse</label><input id="Variants___index__Size" name="Variants[__index__].Size" class="form-control" maxlength="40" /></div>
+            <div class="admin-form-field"><label for="Variants___index__DailyRate">Dagspris</label><input id="Variants___index__DailyRate" name="Variants[__index__].DailyRate" class="form-control" type="number" min="0.01" max="50000" step="0.01" value="1" required /></div>
+            <div class="admin-form-field"><label for="Variants___index__InitialUnitCount">Antal fysiske enheder</label><input id="Variants___index__InitialUnitCount" name="Variants[__index__].InitialUnitCount" class="form-control" type="number" min="0" max="5000" step="1" value="0" required /></div>
+        </div>
+        <details class="admin-variant-details">
+            <summary>Flere produktoplysninger (valgfrit)</summary>
+            <div class="admin-form-grid">
+                <div class="admin-form-field"><label for="Variants___index__Gender">Køn</label><input id="Variants___index__Gender" name="Variants[__index__].Gender" class="form-control" maxlength="40" /></div>
+                <div class="admin-form-field"><label for="Variants___index__EquipmentType">Udstyrstype</label><input id="Variants___index__EquipmentType" name="Variants[__index__].EquipmentType" class="form-control" maxlength="60" /></div>
+                <div class="admin-form-field"><label for="Variants___index__ThicknessMm">Tykkelse i mm</label><input id="Variants___index__ThicknessMm" name="Variants[__index__].ThicknessMm" class="form-control" type="number" min="0" max="1000" step="0.1" /></div>
+                <div class="admin-form-field"><label for="Variants___index__VolumeLiters">Volumen i liter</label><input id="Variants___index__VolumeLiters" name="Variants[__index__].VolumeLiters" class="form-control" type="number" min="0" max="10000" step="0.1" /></div>
+                <div class="admin-form-field"><label for="Variants___index__FirstStage">Første trin</label><input id="Variants___index__FirstStage" name="Variants[__index__].FirstStage" class="form-control" maxlength="100" /></div>
+                <div class="admin-form-field"><label for="Variants___index__SecondStage">Andet trin</label><input id="Variants___index__SecondStage" name="Variants[__index__].SecondStage" class="form-control" maxlength="100" /></div>
+                <div class="admin-form-field"><label for="Variants___index__Octopus">Octopus</label><input id="Variants___index__Octopus" name="Variants[__index__].Octopus" class="form-control" maxlength="100" /></div>
+            </div>
+        </details>
+    </fieldset>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const list = document.getElementById('variant-list');
+            const template = document.getElementById('variant-template');
+            let nextIndex = @Model.Variants.Count;
+
+            document.getElementById('add-variant').addEventListener('click', () => {
+                const html = template.innerHTML
+                    .replaceAll('__index__', String(nextIndex))
+                    .replaceAll('__number__', String(nextIndex + 1));
+                list.insertAdjacentHTML('beforeend', html);
+                nextIndex++;
+            });
+        })();
+    </script>
+}

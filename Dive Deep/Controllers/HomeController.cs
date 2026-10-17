@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Dive_Deep.Models;
+using Dive_Deep.Services;
+using Dive_Deep.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dive_Deep.Controllers
@@ -7,15 +9,18 @@ namespace Dive_Deep.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IProductService _products;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IProductService products)
         {
             _logger = logger;
+            _products = products;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            return View();
+            var featuredProducts = await _products.GetFeaturedProductsAsync(4, cancellationToken);
+            return View(new HomePageViewModel { FeaturedProducts = featuredProducts });
         }
 
         public IActionResult Privacy()

@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Dive_Deep.ViewModels
+@model BookingViewModel
+@{
+    var action = ViewBag.Action as string ?? string.Empty;
+    var isEdit = action == "edit";
+    ViewData["Title"] = isEdit ? "Rediger booking" : "Opret booking";
+}
+
+<section class="booking-edit-page">
+    <p class="eyebrow">@(ViewBag.IsAdmin == true ? "ADMINISTRATION" : "BOOKING")</p>
+    <h1>@(isEdit ? $"Rediger booking #{Model.Booking.BookingId}" : "Opret booking")</h1>
+
+    @if (isEdit && ViewBag.IsAdmin == true && !string.IsNullOrWhiteSpace(Model.CustomerEmail))
+    {
+        <div class="booking-owner-note">
+            <strong>Kunde:</strong> @Model.CustomerName · @Model.CustomerEmail
+            <p>Du redigerer én udstyrslinje. De øvrige linjer i bookingen bliver bevaret.</p>
+        </div>
+    }
+
+    <form method="post" asp-controller="Bookings" asp-action="@action" class="booking-edit-form">
+        @if (isEdit)
+        {
+            <input type="hidden" asp-for="Booking.BookingId" />
+            <input type="hidden" asp-for="Booking.BookingItemId" />
+            <input type="hidden" asp-for="Booking.RowVersion" />
+        }
+
+        <div asp-validation-summary="ModelOnly" class="validation-message" role="alert"></div>
+
+        <div class="filter-field">
+            <label asp-for="Booking.ProductId"></label>
+            <select asp-for="Booking.ProductId"
+                    asp-items="@(new SelectList(Model.Products.Select(product => new { product.ProductId, product.DisplayName }), "ProductId", "DisplayName", Model.Booking.ProductId))">
+                <option value="0">Vælg udstyr</option>
+            </select>
+            <span asp-validation-for="Booking.ProductId" class="validation-message"></span>
+        </div>
+
+        <div class="filter-field">
+            <label asp-for="Booking.Quantity"></label>
+            <input asp-for="Booking.Quantity" type="number" min="1" max="100" />
+            <span asp-validation-for="Booking.Quantity" class="validation-message"></span>
+        </div>
+
+        <div class="filter-field">
+            <label asp-for="Booking.StartTime"></label>
+            <input type="date" asp-for="Booking.StartTime"
+                   value="@Model.Booking.StartTime.ToString("yyyy-MM-dd")" />
+            <span asp-validation-for="Booking.StartTime" class="validation-message"></span>
+        </div>
+
+        <div class="filter-field">
+            <label asp-for="Booking.EndTime"></label>
+            <input type="date" asp-for="Booking.EndTime"
+                   value="@Model.Booking.EndTime.ToString("yyyy-MM-dd")" />
+            <span asp-validation-for="Booking.EndTime" class="validation-message"></span>
+        </div>  
+
+        <div class="booking-edit-actions">
+            <button type="submit" class="button button-primary">@(isEdit ? "Gem ændringer" : "Bekræft booking")</button>
+            <a asp-controller="Bookings" asp-action="Index" class="button button-secondary">Tilbage til bookinger</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

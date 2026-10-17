@@ -1,0 +1,143 @@
+@model IReadOnlyList<Dive_Deep.Models.Booking>
+@using System.Globalization
+@using Dive_Deep.Models
+@using Dive_Deep.Services
+@{
+    ViewData["Title"] = (bool)(ViewBag.IsAdmin ?? false) ? "Administrer bookinger" : "Mine bookinger";
+    var isAdmin = (bool)(ViewBag.IsAdmin ?? false);
+    var showHistory = (bool)(ViewBag.ShowHistory ?? false);
+    var culture = CultureInfo.GetCultureInfo("da-DK");
+    var now = DateTimeOffset.UtcNow;
+}
+
+<section class="booking-page-heading">
+    <p class="eyebrow">@(isAdmin ? "ADMINISTRATION" : "DIN KONTO")</p>
+    <h1>@(isAdmin ? "Alle kunders bookinger" : showHistory ? "Ordrehistorik" : "Kommende og aktuelle bookinger")</h1>
+    <p>@(isAdmin
+        ? "Alle bookinger."
+        : showHistory
+            ? "Her kan du se dine afsluttede og annullerede bookinger. Bookingerne gemmes i historikken."
+            : "Her vises dine bekræftede bookinger med en lejeperiode, der endnu ikke er afsluttet. Afsluttede og annullerede bookinger findes i ordrehistorikken.")</p>
+</section>
+
+@if (!isAdmin)
+{
+    <nav class="booking-history-tabs" aria-label="Dine bookinger">
+        <a class="@(showHistory ? "" : "is-selected")" asp-controller="Bookings" asp-action="Index">Aktuelle bookinger</a>
+        <a class="@(showHistory ? "is-selected" : "")" asp-controller="Bookings" asp-action="Index" asp-route-history="true">Ordrehistorik</a>
+    </nav>
+}
+
+@if (TempData["BookingSuccess"] is string successMessage)
+{
+    <div class="notice notice-success" role="status">@successMessage</div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>@(isAdmin ? "Der er ingen bookinger endnu" : "Du har ingen bookinger endnu")</h2>
+        <p>@(isAdmin
+            ? "Alle kundernes bekræftede, afsluttede og annullerede bookinger vises her."
+            : showHistory
+                ? "Du har ingen afsluttede eller annullerede bookinger i historikken endnu."
+                : "Vælg udstyr, og bekræft lejen fra kurven.")</p>
+        @if (!isAdmin && !showHistory)
+        {
+            <a class="button button-primary" asp-controller="Products" asp-action="Index">Se produkter</a>
+        }
+    </div>
+}
+else
+{
+    <div class="booking-list">
+        @foreach (var booking in Model)
+        {
+            var rentalPeriodEnded = booking.Items.Count > 0 && booking.Items.All(item => item.EndTime <= now);
+            var displayStatus = booking.Status == BookingStatus.Confirmed && rentalPeriodEnded
+                ? BookingStatus.Completed
+                : booking.Status;
+            var statusLabel = displayStatus switch
+            {
+                BookingStatus.Confirmed => "Bekræftet",
+                BookingStatus.Cancelled => "Annulleret",
+                BookingStatus.Completed => "Afsluttet",
+                _ => booking.Status.ToString()
+            };
+
+            <article class="booking-card">
+                <header class="booking-card-header">
+                    <div>
+                        <p class="eyebrow">BOOKING #@booking.BookingId</p>
+                        @if (isAdmin)
+                        {
+                            <h2>@booking.User?.FirstName @booking.User?.LastName</h2>
+                            <p class="booking-customer">@booking.User?.Email · Brugernavn: @booking.User?.UserName</p>
+                        }
+                        else
+                        {
+                            <h2>Oprettet @DanishDateTime.ToLocal(booking.CreatedAtUtc).ToString("dd-MM-yyyy")</h2>
+                        }
+                    </div>
+                    <span class="booking-status status-@displayStatus.ToString().ToLowerInvariant()">@statusLabel</span>
+                </header>
+
+                <div class="booking-lines">
+                    @foreach (var item in booking.Items.OrderBy(line => line.BookingItemId))
+                    {
+                        var start = item.StartTime;
+                        var end = item.EndTime;
+                        var rentalDays = Math.Max(1, (int)Math.Ceiling((end - start).TotalDays));
+                        var lineTotal = item.DailyRateAtBooking * item.Quantity * rentalDays;
+
+                        <section class="booking-line">
+                            <div class="booking-product">
+                                <p class="product-category-label">@item.ProductVariant.Product.Category.Name</p>
+                                <h3>@item.ProductVariant.Product.Brand @item.ProductVariant.Product.Model</h3>
+                                <p class="muted-text">@item.ProductVariant.OptionLabel · @item.Quantity stk.</p>
+                            </div>
+                            <div class="booking-period">
+                                <span>Fra</span>
+                                <strong>@start.ToString("dd-MM-yyyy")</strong>
+                                <span>Til</span>
+                                <strong>@end.ToString("dd-MM-yyyy")</strong>
+                            </div>
+                            <div class="booking-line-price">
+                                <span>@rentalDays @(rentalDays == 1 ? "dag" : "dage") · @item.DailyRateAtBooking.ToString("C0", culture)/dag</span>
+                                <strong>@lineTotal.ToString("C0", culture)</strong>
+                            </div>
+                            @if (booking.Status == BookingStatus.Confirmed && item.StartTime > now)
+                            {
+                                <a class="button button-secondary booking-edit-button"
+                                   asp-controller="Bookings"
+                                   asp-action="Edit"
+                                   asp-route-id="@booking.BookingId"
+                                   asp-route-itemId="@item.BookingItemId">
+                                    Rediger linje
+                                </a>
+                            }
+                        </section>
+                    }
+                </div>
+
+                <footer class="booking-card-footer" style="color:black">
+                        <span>Booking oprettet @DanishDateTime.ToLocal(booking.CreatedAtUtc).ToString("dd-MM-yyyy")</span>
+                    @if (booking.Status == BookingStatus.Confirmed)
+                    {
+                        <form asp-controller="Bookings" asp-action="Delete" asp-route-id="@booking.BookingId" method="post">
+                            <button type="submit" class="remove-link"
+                                    onclick="return confirm('Vil du annullere booking #@booking.BookingId?');">
+                                Annullér booking
+                            </button>
+                        </form>
+                    }
+                </footer>
+            </article>
+        }
+    </div>
+}
+
+@if (!isAdmin && !showHistory)
+{
+    <a asp-controller="Bookings" asp-action="Add" class="button button-primary booking-create-button">Opret booking</a>
+}

@@ -1,85 +1,133 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+@model Dive_Deep.ViewModels.ProductCatalogViewModel
 @{
-    ViewData["title"] = "Produkter";
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.Category) ? "Produkter" : Model.Category;
+    var diveBcds = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "BCD").ToList();
+    var diveSuits = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "Dykkerdragter").ToList();
+    var diveRegulators = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "Regulatorsæt").ToList();
+    var diveTanks = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "Tanke").ToList();
+    var diveFins = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "Finner").ToList();
+    var masks = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "Maske/Snorkel" && variant.EquipmentType == "Maske").ToList();
+    var snorkels = Model.PackageVariants.Where(variant => variant.Product.Category.Name == "Maske/Snorkel" && variant.EquipmentType == "Snorkel").ToList();
 }
 
-<style>
+<section class="catalog-heading">
+    <h1>@Model.Heading</h1>
+    <p>Find det rigtige udstyr til din næste tur under overfladen.</p>
+</section>
 
-    .btn {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
+<nav class="category-chips" aria-label="Produktkategorier">
+    <a class="category-chip @(Model.Category is null ? "selected" : "")" asp-controller="Products" asp-action="Index">Alt udstyr</a>
+    @foreach (var category in Model.Categories)
+    {
+        <a class="category-chip @(string.Equals(category, Model.Category, StringComparison.OrdinalIgnoreCase) ? "selected" : "")"
+           asp-controller="Products" asp-action="Category" asp-route-category="@category">
+            @category
+        </a>
     }
+</nav>
 
-    .card {
-    border: 6px solid #55a5fa;
-    height: 100%;
-    margin-top: 20px;
-    }
+@if (Model.Category is null)
+{
+    <section class="package-section" aria-labelledby="package-heading">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">LEJ DET HELE SAMLET</p>
+                <h2 id="package-heading">Komplette sæt</h2>
+                <p>Vælg én variant af hver del. Lejeperioden vælger du bagefter i kurven.</p>
+            </div>
+        </div>
+        <div class="package-grid">
+            <article class="package-card">
+                <h3>Komplet dykkersæt</h3>
+                <p>BCD, dragt, regulatorsæt, tank, finner, maske og snorkel.</p>
+                <form asp-controller="Cart" asp-action="AddPackage" method="post" class="package-form">
+                    <input type="hidden" name="packageType" value="CompleteDiveSet" />
+                    <input type="hidden" name="quantity" value="1" />
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-bcd", "Vælg BCD", diveBcds)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-suit", "Vælg dykkerdragt", diveSuits)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-regulator", "Vælg regulatorsæt", diveRegulators)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-tank", "Vælg tank", diveTanks)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-fins", "Vælg finner", diveFins)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-mask", "Vælg maske", masks)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("dive-snorkel", "Vælg snorkel", snorkels)' />
+                        <button class="button button-primary" type="submit">Læg dykkersæt i kurv</button>
+                    }
+                    else
+                    {
+                        <a class="button button-primary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@Context.Request.Path">Log ind for at leje</a>
+                    }
+                </form>
+            </article>
+            <article class="package-card">
+                <h3>Komplet snorkelsæt</h3>
+                <p>Maske, snorkel og finner.</p>
+                <form asp-controller="Cart" asp-action="AddPackage" method="post" class="package-form">
+                    <input type="hidden" name="packageType" value="CompleteSnorkelSet" />
+                    <input type="hidden" name="quantity" value="1" />
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("snorkel-mask", "Vælg maske", masks)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("snorkel-snorkel", "Vælg snorkel", snorkels)' />
+                        <partial name="_PackageVariantSelect" model='new Dive_Deep.ViewModels.PackageVariantSelectViewModel("snorkel-fins", "Vælg finner", diveFins)' />
+                        <button class="button button-primary" type="submit">Læg snorkelsæt i kurv</button>
+                    }
+                    else
+                    {
+                        <a class="button button-primary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@Context.Request.Path">Log ind for at leje</a>
+                    }
+                </form>
+            </article>
+        </div>
+    </section>
+}
 
-</style>
+<form asp-controller="Products" asp-action="Index" method="get" class="catalog-filters">
+    <div class="filter-field filter-search">
+        <label for="catalog-search">Søg efter udstyr</label>
+        <input id="catalog-search" name="search" value="@Model.Search" placeholder="Mærke, model eller kategori" />
+    </div>
+    <div class="filter-field">
+        <label for="catalog-category">Kategori</label>
+        <select id="catalog-category" name="category">
+            <option value="">Alle kategorier</option>
+            @foreach (var category in Model.Categories)
+            {
+                <option value="@category" selected="@(string.Equals(category, Model.Category, StringComparison.OrdinalIgnoreCase))">@category</option>
+            }
+        </select>
+    </div>
+    <div class="filter-field">
+        <label for="min-rate">Min. kr./dag</label>
+        <input id="min-rate" name="minDailyRate" type="number" min="0" step="1" value="@Model.MinimumDailyRate" />
+    </div>
+    <div class="filter-field">
+        <label for="max-rate">Maks. kr./dag</label>
+        <input id="max-rate" name="maxDailyRate" type="number" min="0" step="1" value="@Model.MaximumDailyRate" />
+    </div>
+    <button class="button button-primary filter-submit" type="submit">Filtrér</button>
+</form>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    <div class="col">
-        <div class="card">
-            <a href="default.asp"><img src="~/lib/Images/BCD.jpg" class="card-img-top" alt="..."></a>
-            <div class="card-body">
-                <h5 class="card-title">BCD</h5>
-                <p class="card-text"></p>
-                <a href="#" text-align="right" class="btn btn-primary">Bestil</a>
-            </div>
-        </div>
+@if (!string.IsNullOrWhiteSpace(Model.FilterError))
+{
+    <p class="notice notice-error" role="alert">@Model.FilterError</p>
+}
+
+@if (Model.Products.Count == 0)
+{
+    <div class="empty-state">
+        <h2>Vi fandt ikke noget udstyr</h2>
+        <p>Prøv en anden søgning eller nulstil filtrene.</p>
+        <a class="button button-secondary" asp-controller="Products" asp-action="Index">Vis alle produkter</a>
     </div>
-    <div class="col">
-        <div class="card">
-            <a href="default.asp"><img src="~/lib/Images/Dykkerdragt.webp" class="card-img-top" alt="..."></a>
-            <div class="card-body">
-                <h5 class="card-title">Dykkerdragt</h5>
-                <p class="card-text"></p>
-                <a href="#" text-align="right" class="btn btn-primary">Bestil</a>
-            </div>
-        </div>
+}
+else
+{
+    <div class="product-grid">
+        @foreach (var product in Model.Products)
+        {
+            <partial name="_ProductCard" model="product" />
+        }
     </div>
-    <div class="col">
-        <div class="card">
-            <a href="default.asp"><img src="~/lib/Images/Tank.webp" class="card-img-top" alt="..."></a>
-            <div class="card-body">
-                <h5 class="card-title">Tank</h5>
-                <p class="card-text"></p>
-                <a href="#" text-align="right" class="btn btn-primary">Bestil</a>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card">
-            <a href="default.asp"><img src="~/lib/Images/Regulatorsæt.WEBP" class="card-img-top" alt="..."></a>
-            <div class="card-body">
-                <h5 class="card-title">Regulatorsæt</h5>
-                <p class="card-text"></p>
-                <a href="#" text-align="right" class="btn btn-primary">Bestil</a>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card">
-            <a href="default.asp"><img src="~/lib/Images/Snorkel maske.webp" class="card-img-top" alt="..."></a>
-            <div class="card-body">
-                <h5 class="card-title">Maske/Snorkel</h5>
-                <p class="card-text"></p>
-                <a href="#" text-align="right" class="btn btn-primary">Bestil</a>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card">
-            <a href="default.asp"><img src="~/lib/Images/Finner.jpg" class="card-img-top" alt="..."></a>
-            <div class="card-body">
-                <h5 class="card-title">Finner</h5>
-                <p class="card-text"></p>
-                <a href="#" text-align="right" class="btn btn-primary">Bestil</a>
-            </div>
-        </div>
-    </div>
-</div>
+}
