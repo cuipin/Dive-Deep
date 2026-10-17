@@ -27,5 +27,6 @@ public interface ICartService
         string userId,
         int cartItemId,
         CancellationToken cancellationToken = default);
+    Task<CartCheckoutResult> CheckoutAsync(string userId, CancellationToken cancellationToken = default);
     Task ClearAsync(string userId, CancellationToken cancellationToken = default);
 }

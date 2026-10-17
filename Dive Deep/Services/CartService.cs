@@ -8,11 +8,16 @@ public class CartService : ICartService
 {
     private readonly ICartRepository _carts;
     private readonly IProductRepository _products;
+    private readonly IBookingService _bookings;
 
-    public CartService(ICartRepository carts, IProductRepository products)
+    public CartService(
+        ICartRepository carts,
+        IProductRepository products,
+        IBookingService bookings)
     {
         _carts = carts;
         _products = products;
+        _bookings = bookings;
     }
 
     public Task<Cart> GetForUserAsync(string userId, CancellationToken cancellationToken = default) =>
@@ -159,6 +164,41 @@ public class CartService : ICartService
 
     public Task ClearAsync(string userId, CancellationToken cancellationToken = default) =>
         _carts.ClearForUserAsync(userId, cancellationToken);
+
+    public async Task<CartCheckoutResult> CheckoutAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var cart = await _carts.GetOrCreateForUserAsync(userId, cancellationToken);
+        if (cart.Items.Count == 0)
+        {
+            return CartCheckoutResult.Failure("CartEmpty", "Din kurv er tom.");
+        }
+
+        if (cart.Items.Any(item => item.StartTime is null || item.EndTime is null))
+        {
+            return CartCheckoutResult.Failure(
+                "RentalPeriodRequired",
+                "Vælg start- og sluttidspunkt for alle produkter, før du bekræfter lejen.");
+        }
+
+        // Samme checkout-regel bruges nu af både MVC-siden og mobil-API'et.
+        var lines = cart.Items.Select(item => new BookingLineRequest(
+            item.ProductVariantId,
+            item.Quantity,
+            item.StartTime!.Value,
+            item.EndTime!.Value)).ToArray();
+        var booking = await _bookings.CreateAsync(userId, lines, cancellationToken);
+        if (!booking.Succeeded || booking.BookingId is null)
+        {
+            return CartCheckoutResult.Failure(
+                booking.ErrorCode ?? "BookingFailed",
+                booking.ErrorMessage ?? "Lejen kunne ikke bekræftes.");
+        }
+
+        await _carts.ClearForUserAsync(userId, cancellationToken);
+        return CartCheckoutResult.Success(booking.BookingId.Value);
+    }
 
     private static string? ValidateUserAndQuantity(string userId, int quantity)
     {

@@ -11,16 +11,13 @@ namespace Dive_Deep.Controllers;
 public class CartController : Controller
 {
     private readonly ICartService _carts;
-    private readonly IBookingService _bookings;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public CartController(
         ICartService carts,
-        IBookingService bookings,
         UserManager<ApplicationUser> userManager)
     {
         _carts = carts;
-        _bookings = bookings;
         _userManager = userManager;
     }
 
@@ -103,33 +100,13 @@ public class CartController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Checkout(CancellationToken cancellationToken)
     {
-        var cart = await _carts.GetForUserAsync(CurrentUserId, cancellationToken);
-        if (cart.Items.Count == 0)
-        {
-            TempData["CartError"] = "Din kurv er tom.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        if (cart.Items.Any(item => item.StartTime is null || item.EndTime is null))
-        {
-            TempData["CartError"] = "Vælg start- og sluttidspunkt for alle produkter, før du bekræfter lejen.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        var lines = cart.Items.Select(item => new BookingLineRequest(
-            item.ProductVariantId,
-            item.Quantity,
-            item.StartTime!.Value,
-            item.EndTime!.Value)).ToArray();
-
-        var result = await _bookings.CreateAsync(CurrentUserId, lines, cancellationToken);
+        var result = await _carts.CheckoutAsync(CurrentUserId, cancellationToken);
         if (!result.Succeeded)
         {
-            TempData["CartError"] = result.ErrorMessage ?? "Lejen kunne ikke bekræftes.";
+            TempData["CartError"] = result.ErrorMessage;
             return RedirectToAction(nameof(Index));
         }
 
-        await _carts.ClearAsync(CurrentUserId, cancellationToken);
         TempData["CartSuccess"] = $"Din leje er bekræftet. Bookingnummer: {result.BookingId}.";
         return RedirectToAction(nameof(Index));
     }

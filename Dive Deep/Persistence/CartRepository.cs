@@ -145,6 +145,9 @@ public class CartRepository : ICartRepository
                 .ThenInclude(item => item.ProductVariant)
                     .ThenInclude(variant => variant.Product)
                         .ThenInclude(product => product.Category)
+            .Include(cart => cart.Items)
+                .ThenInclude(item => item.ProductVariant)
+                    .ThenInclude(variant => variant.EquipmentUnits)
             .SingleOrDefaultAsync(cancellationToken);
 
     private static bool IsUniqueConflict(DbUpdateException exception) =>

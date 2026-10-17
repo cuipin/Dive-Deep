@@ -22,6 +22,7 @@ public class Dive_DeepContext : IdentityDbContext<ApplicationUser>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // EF Core oversætter reglerne her til tabeller, kolonner, foreign keys og indexes i SQL Server.
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<ProductCategory>(entity =>
@@ -78,6 +79,7 @@ public class Dive_DeepContext : IdentityDbContext<ApplicationUser>
             entity.Property(booking => booking.UserId).HasMaxLength(450).IsRequired();
             entity.Property(booking => booking.Status).HasConversion<string>().HasMaxLength(24);
             entity.Property(booking => booking.CreatedAtUtc).HasColumnType("datetimeoffset");
+            // Optimistic locking: SQL Server ændrer RowVersion ved en opdatering, så gamle skærme ikke overskriver nye data.
             entity.Property(booking => booking.RowVersion).IsRowVersion().IsConcurrencyToken();
             entity.HasIndex(booking => new { booking.UserId, booking.CreatedAtUtc });
             entity.HasOne(booking => booking.User)

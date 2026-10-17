@@ -1,8 +1,12 @@
+using System.Text;
+using Dive_Deep.Api;
 using Dive_Deep.Data;
 using Dive_Deep.Persistence;
 using Dive_Deep.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Dive_Deep;
 
@@ -17,14 +21,17 @@ public class Program
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
                 "Connection string 'DefaultConnection' was not found in appsettings.json.");
+        // Dependency Injection: ASP.NET laver én DbContext pr. web-request og giver den til dem, der beder om den.
         builder.Services.AddDbContext<Dive_DeepContext>(options =>
             options.UseSqlServer(connectionString));
 
+        // Identity bruger den samme database, men tager sig selv af brugere, roller og password-hashing.
         builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
                 options.SignIn.RequireConfirmedAccount = false)
                 .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<Dive_DeepContext>();
 
+        // Scoped passer til services/repositories, fordi de arbejder i samme request som DbContext'en.
         builder.Services.AddScoped<IBookingRepository, BookingRepository>();
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
         builder.Services.AddScoped<ICartRepository, CartRepository>();
@@ -32,9 +39,57 @@ public class Program
         builder.Services.AddScoped<IBookingService, BookingService>();
         builder.Services.AddScoped<IProductService, ProductService>();
         builder.Services.AddScoped<ICartService, CartService>();
+
+        // HttpClientFactory sørger for, at Open-Meteo-kald kan genbruge HTTP-forbindelser i stedet for at lave en ny hver gang.
         builder.Services.AddHttpClient<IDiveConditionsService, OpenMeteoDiveConditionsService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
+        });
+
+        var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+            ?? throw new InvalidOperationException("JWT-indstillinger mangler i appsettings.json.");
+        if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey) || jwtOptions.SigningKey.Length < 32)
+        {
+            throw new InvalidOperationException(
+                "Jwt:SigningKey mangler. Gem en hemmelig nøgle på mindst 32 tegn med dotnet user-secrets set \"Jwt:SigningKey\" \"...\".");
+        }
+
+        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+        builder.Services.AddScoped<IAccessTokenService, JwtAccessTokenService>();
+
+        // Vi angiver ikke Bearer som global standard, for MVC-siden skal fortsat bruge Identitys cookie-login.
+        builder.Services.AddAuthentication()
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1)
+                };
+            });
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy(ApiPolicies.MobileApi, policy =>
+            {
+                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                policy.RequireAuthenticatedUser();
+            });
+        });
+
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(ApiPolicies.MobileApi, policy => policy
+                // CORS beskytter browser-baserede klienter. Native apps som MAUI rammes normalt ikke af CORS.
+                .WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod());
         });
 
         var app = builder.Build();
@@ -70,14 +125,18 @@ public class Program
             app.UseHsts();
         }
 
+        // Middleware-pipelinen kører oppefra og ned for hver request.
         app.UseHttpsRedirection();
         // Serve files added to wwwroot while the app is running (uploaded product photos).
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors(ApiPolicies.MobileApi);
         app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapStaticAssets();
+        // Attribute routes som /api/v1/products bliver først aktive med MapControllers().
+        app.MapControllers();
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}")

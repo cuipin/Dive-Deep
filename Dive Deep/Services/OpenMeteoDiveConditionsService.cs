@@ -32,6 +32,7 @@ public sealed class OpenMeteoDiveConditionsService(HttpClient httpClient) : IDiv
             var forecastUri = new Uri($"{ForecastEndpoint}?latitude={lat}&longitude={lon}&current=wind_speed_10m%2Cprecipitation%2Cweather_code&wind_speed_unit=ms&precipitation_unit=mm&timezone=Europe%2FCopenhagen");
             var marineUri = new Uri($"{MarineEndpoint}?latitude={lat}&longitude={lon}&current=wave_height%2Csea_surface_temperature&cell_selection=sea&timezone=Europe%2FCopenhagen");
 
+            // async/await lader de to API-kald køre samtidig uden at blokere servertråden.
             var forecastTask = GetJsonAsync<ForecastResponse>(forecastUri, cancellationToken);
             var marineTask = GetJsonAsync<MarineResponse>(marineUri, cancellationToken);
             await Task.WhenAll(forecastTask, marineTask);
@@ -138,6 +139,7 @@ public sealed class OpenMeteoDiveConditionsService(HttpClient httpClient) : IDiv
     {
         using var response = await httpClient.GetAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();
+        // Deserialisering: JSON-svaret fra Open-Meteo bliver lavet om til vores C#-klasser.
         var result = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
         return result ?? throw new JsonException("The API returned an empty response.");
     }

@@ -91,6 +91,7 @@ public class BookingRepository : IBookingRepository
         Booking booking,
         CancellationToken cancellationToken = default)
     {
+        // Serializable er den pessimistische del: mens vi finder og reserverer udstyr, får andre requests ikke lov til at snuppe det samme lager.
         await using var transaction = await _DiveDeepContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
@@ -181,6 +182,7 @@ public class BookingRepository : IBookingRepository
         BookingLineRequest line,
         CancellationToken cancellationToken = default)
     {
+        // Samme lås bruges ved redigering, så en ændring ikke kan skabe en dobbeltbooking imens.
         await using var transaction = await _DiveDeepContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
@@ -197,6 +199,16 @@ public class BookingRepository : IBookingRepository
         {
             return BookingReservationOutcome.BookingNotFound;
         }
+
+        // Optimistic locking: hvis mobil/web sender en gammel RowVersion, stopper vi før noget bliver gemt.
+        if (expectedRowVersion.Length == 0 || !booking.RowVersion.SequenceEqual(expectedRowVersion))
+        {
+            return BookingReservationOutcome.ConcurrencyConflict;
+        }
+
+        _DiveDeepContext.Entry(booking)
+            .Property(candidate => candidate.RowVersion)
+            .OriginalValue = expectedRowVersion;
 
         var item = booking.Items.SingleOrDefault(candidate => candidate.BookingItemId == bookingItemId);
         if (item is null)
@@ -272,15 +284,6 @@ public class BookingRepository : IBookingRepository
                 EquipmentUnitId = unitId
             });
         }
-        if (expectedRowVersion.Length == 0 ||
-            !booking.RowVersion.SequenceEqual(expectedRowVersion))
-        {
-            return BookingReservationOutcome.ConcurrencyConflict;
-        }
-        _DiveDeepContext.Entry(booking)
-            .Property(booking => booking.RowVersion)
-            .OriginalValue = expectedRowVersion;
-
         try
         {
             await _DiveDeepContext.SaveChangesAsync(cancellationToken);
@@ -298,11 +301,6 @@ public class BookingRepository : IBookingRepository
             return BookingReservationOutcome.Unavailable;
         }
 
-        if (expectedRowVersion.Length == 0 ||
-            !booking.RowVersion.SequenceEqual(expectedRowVersion))
-        {
-            return BookingReservationOutcome.ConcurrencyConflict;
-        }
     }
 
     public async Task<BookingReservationOutcome> CancelAsync(
